@@ -1,6 +1,7 @@
 # Linger
 
 Design and behaviour: `docs/superpowers/specs/2026-10-30-linger-design.md`.
+Design-record rules (specs, plans, status, commits) are in the global agent instructions.
 
 ## Commands
 
