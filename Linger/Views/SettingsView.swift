@@ -52,6 +52,7 @@ struct SettingsView: View {
         Binding(
             get: { launchAtLogin },
             set: { on in
+                model.markLoginItemConfigured()
                 do {
                     try LoginItem.setEnabled(on)
                 } catch {

@@ -33,12 +33,16 @@ final class AppModel {
         }
         #if !DEBUG
         if !store.loginItemConfigured {
-            do {
-                try LoginItem.setEnabled(true)
+            if LoginItem.isEnabled {
                 store.loginItemConfigured = true
-                Log.engine.notice("login item enabled on first launch")
-            } catch {
-                Log.engine.error("login item failed: \(error.localizedDescription, privacy: .private)")
+            } else {
+                do {
+                    try LoginItem.setEnabled(true)
+                    store.loginItemConfigured = true
+                    Log.engine.notice("login item enabled on first launch")
+                } catch {
+                    Log.engine.error("login item failed: \(error.localizedDescription, privacy: .private)")
+                }
             }
         }
         #endif
@@ -82,6 +86,10 @@ final class AppModel {
     func resume() {
         settings.pausedUntil = nil
         tick()
+    }
+
+    func markLoginItemConfigured() {
+        store.loginItemConfigured = true
     }
 
     func refresh() {
