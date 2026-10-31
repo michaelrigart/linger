@@ -151,6 +151,7 @@ final class AppModel {
 
     private func checkLastPostTookEffect(idle: TimeInterval, uptime: TimeInterval) {
         guard let lastPostUptime else { return }
+        self.lastPostUptime = nil
         if idle > (uptime - lastPostUptime) + 1 {
             guard !noEffectLogged else { return }
             noEffectLogged = true
