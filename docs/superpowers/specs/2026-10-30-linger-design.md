@@ -2,7 +2,8 @@
 
 **Date:** 2026-10-30
 **Owner:** Michael Rigart
-**Status:** Approved
+**Status:** In progress (branch `feat/linger-v1`; no merge request yet, because the
+repository has no remote)
 **Revised:** 2026-10-31. The activity mechanism changed from
 `IOPMAssertionDeclareUserActivity` to a zero-distance mouse event, which needs the
 Accessibility permission. Michael decided this after the idle-timer measurements in
