@@ -21,6 +21,7 @@ final class AppModel {
     @ObservationIgnored private var engine = ActivityEngine()
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var lastLoggedStatus: EngineStatus?
+    @ObservationIgnored private var probeActive = false
 
     init() {
         settings = store.load()
@@ -30,14 +31,17 @@ final class AppModel {
                 try LoginItem.setEnabled(true)
                 Log.engine.notice("login item enabled on first launch")
             } catch {
-                Log.engine.error("login item failed: \(error.localizedDescription, privacy: .public)")
+                Log.engine.error("login item failed: \(error.localizedDescription, privacy: .private)")
             }
             #endif
             store.save(settings)
         }
 
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "LingerProbe") { return }
+        if UserDefaults.standard.bool(forKey: "LingerProbe") {
+            probeActive = true
+            return
+        }
         #endif
 
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
@@ -74,6 +78,7 @@ final class AppModel {
     }
 
     private func tick() {
+        guard !probeActive else { return }
         let now = Date()
         let timeZone = TimeZone.current
         let coordinates = TimeZoneCoordinates.coordinates(forIdentifier: timeZone.identifier)
@@ -106,12 +111,13 @@ final class AppModel {
             }
         }
 
-        self.coordinates = coordinates
-        appearanceIsAuto = isAuto
-        effectiveAppearance = effective
-        nextStepAside = coordinates.flatMap {
+        let next = coordinates.flatMap {
             SwitchSchedule.nextStepAside(after: now, coordinates: $0, timeZone: timeZone, effective: effective)
         }
+        if self.coordinates != coordinates { self.coordinates = coordinates }
+        if appearanceIsAuto != isAuto { appearanceIsAuto = isAuto }
+        if effectiveAppearance != effective { effectiveAppearance = effective }
+        if nextStepAside?.target != next?.target || nextStepAside?.at != next?.at { nextStepAside = next }
         if output != result { output = result }
         logStatusChange(result.status)
     }
