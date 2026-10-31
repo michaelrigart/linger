@@ -2,8 +2,8 @@
 
 **Date:** 2026-10-30
 **Owner:** Michael Rigart
-**Status:** In progress (branch `feat/linger-v1`; no merge request yet, because the
-repository has no remote)
+**Status:** In progress (branch `feat/linger-v1`, draft
+[PR #1](https://github.com/michaelrigart/linger/pull/1))
 **Revised:** 2026-10-31. The activity mechanism changed from
 `IOPMAssertionDeclareUserActivity` to a zero-distance mouse event, which needs the
 Accessibility permission. Michael decided this after the idle-timer measurements in
@@ -40,6 +40,13 @@ and `pmset -g log`:
 - **An idle user plus a due switch means an immediate switch.** Every time the check
   passed while a switch was due, macOS switched within 0.1 s. This held for every
   switch in the logs.
+- **"Idle" means about 60 s without input.** When the check finds the user active, it
+  retries at the moment the idle time will reach about 60 s ("try again in 2.998").
+  Linger's posts are at least 60 s apart, so the idle time reaches that mark between
+  posts and the retry catches it. In acceptance, the Mac went Dark at a sun altitude of −2.8° while Linger kept
+  posting every 60–65 s, before stepping aside was due. Stepping aside at −5° covers the
+  case where the switch has not happened by then, for example when Michael steps away
+  later in the evening.
 - **Jiggler blocks it.** On evenings when Jiggler kept running there was no automatic
   switch, and forcing one meant switching Appearance from Light back to Auto by hand.
 - **When the switch is due.** macOS does not switch at sunrise or sunset. Using the
