@@ -26,16 +26,19 @@ final class AppModel {
     init() {
         settings = store.load()
         if !store.hasStoredIsOn {
-            #if !DEBUG
+            store.save(settings)
+        }
+        #if !DEBUG
+        if !store.loginItemConfigured {
             do {
                 try LoginItem.setEnabled(true)
+                store.loginItemConfigured = true
                 Log.engine.notice("login item enabled on first launch")
             } catch {
                 Log.engine.error("login item failed: \(error.localizedDescription, privacy: .private)")
             }
-            #endif
-            store.save(settings)
         }
+        #endif
 
         #if DEBUG
         if UserDefaults.standard.bool(forKey: "LingerProbe") {

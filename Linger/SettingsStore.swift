@@ -8,12 +8,18 @@ final class SettingsStore {
         static let idleDelay = "idleDelay"
         static let stepAsideEnabled = "stepAsideEnabled"
         static let gapBudget = "gapBudget"
+        static let loginItemConfigured = "loginItemConfigured"
     }
 
     private let defaults = UserDefaults.standard
 
     var hasStoredIsOn: Bool {
         defaults.object(forKey: Key.isOn) != nil
+    }
+
+    var loginItemConfigured: Bool {
+        get { defaults.bool(forKey: Key.loginItemConfigured) }
+        set { defaults.set(newValue, forKey: Key.loginItemConfigured) }
     }
 
     func load() -> LingerSettings {
