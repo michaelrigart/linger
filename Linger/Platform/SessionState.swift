@@ -34,13 +34,16 @@ final class SessionState {
     }
 
     private var sessionInhibited: Bool {
-        guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return false }
-        return Self.isInhibited(sessionDictionary: session)
+        Self.isInhibited(session: CGSessionCopyCurrentDictionary())
     }
 
     // Swift does not import the CFSTR macros in CGSession.h, so the keys are spelled out.
     private nonisolated static let onConsoleKey = "kCGSSessionOnConsoleKey"
     private nonisolated static let screenIsLockedKey = "CGSSessionScreenIsLocked"
+
+    nonisolated static func isInhibited(session: CFDictionary?) -> Bool {
+        isInhibited(sessionDictionary: session as? [String: Any] ?? [:])
+    }
 
     nonisolated static func isInhibited(sessionDictionary: [String: Any]) -> Bool {
         let onConsole = sessionDictionary[onConsoleKey] as? Bool ?? false
