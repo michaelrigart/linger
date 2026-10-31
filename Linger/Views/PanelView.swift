@@ -15,6 +15,7 @@ struct PanelView: View {
     private var switchLine: String? {
         PanelCopy.switchLine(
             model.nextStepAside,
+            now: Date(),
             appearanceIsAuto: model.appearanceIsAuto,
             stepAsideEnabled: model.settings.stepAsideEnabled,
             locale: .current,

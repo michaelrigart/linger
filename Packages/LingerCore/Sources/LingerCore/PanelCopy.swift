@@ -21,6 +21,7 @@ public enum PanelCopy {
 
     public static func switchLine(
         _ next: (target: Appearance, at: Date)?,
+        now: Date,
         appearanceIsAuto: Bool,
         stepAsideEnabled: Bool,
         locale: Locale,
@@ -31,6 +32,9 @@ public enum PanelCopy {
             return "Set Appearance to Auto in System Settings to switch light and dark automatically."
         }
         guard let next else { return nil }
+        guard next.at > now else {
+            return "\(next.target.label) mode is due. I'll step aside once you're away so macOS can switch."
+        }
         let time = clock(next.at, locale: locale, timeZone: timeZone)
         return "\(next.target.label) mode around \(time). I'll step aside for a moment once you're away so macOS can switch."
     }
@@ -49,9 +53,10 @@ public enum PanelCopy {
 
     public static func clock(_ date: Date, locale: Locale, timeZone: TimeZone) -> String {
         let rounded = Date(timeIntervalSinceReferenceDate: (date.timeIntervalSinceReferenceDate / 60).rounded() * 60)
+        let h24 = locale.hourCycle == .zeroToTwentyThree || locale.hourCycle == .oneToTwentyFour
         return rounded.formatted(
             Date.FormatStyle(locale: locale, timeZone: timeZone)
-                .hour(.twoDigits(amPM: .abbreviated))
+                .hour(h24 ? .twoDigits(amPM: .abbreviated) : .defaultDigits(amPM: .abbreviated))
                 .minute(.twoDigits)
         )
     }

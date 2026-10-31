@@ -16,6 +16,13 @@ import Testing
     #expect(morning?.target == .light); expectNear(morning?.at, utc("2026-10-31T06:31:30Z"))
 }
 
+@Test func nextStepAsideWhenAlreadyDue() {
+    let due = utc("2026-10-30T16:50:00Z")
+    let next = SwitchSchedule.nextStepAside(after: due, coordinates: brussels, timeZone: tz, effective: .light)
+    #expect(next?.target == .dark)
+    #expect(next?.at == due)
+}
+
 @Test func dstDayMorning() {
     let m = SwitchSchedule.nextStepAside(after: utc("2027-03-27T23:30:00Z"), coordinates: brussels, timeZone: tz, effective: .dark)
     expectNear(m?.at, utc("2027-03-28T05:27:10Z"))

@@ -15,3 +15,4 @@ func expectNear(_ a: Date?, _ b: Date, sourceLocation: SourceLocation = #_source
 
 let tz = TimeZone(identifier: "Europe/Brussels")!
 let enGB = Locale(identifier: "en_GB")
+let enUS = Locale(identifier: "en_US")
