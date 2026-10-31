@@ -38,6 +38,7 @@ struct PanelView: View {
         }
         .padding(14)
         .frame(width: 300)
+        .onAppear { model.refresh() }
     }
 
     private var header: some View {

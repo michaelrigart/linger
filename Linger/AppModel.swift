@@ -22,6 +22,9 @@ final class AppModel {
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var lastLoggedStatus: EngineStatus?
     @ObservationIgnored private var probeActive = false
+    @ObservationIgnored private var activity: NSObjectProtocol?
+    @ObservationIgnored private var lastPostUptime: TimeInterval?
+    @ObservationIgnored private var noEffectLogged = false
 
     init() {
         settings = store.load()
@@ -46,6 +49,11 @@ final class AppModel {
             return
         }
         #endif
+
+        activity = ProcessInfo.processInfo.beginActivity(
+            options: .userInitiatedAllowingIdleSystemSleep,
+            reason: "Keeping you active"
+        )
 
         let timer = Timer(timeInterval: 5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
@@ -76,6 +84,10 @@ final class AppModel {
         tick()
     }
 
+    func refresh() {
+        tick()
+    }
+
     func requestAccess() {
         PostAccess.request()
     }
@@ -83,6 +95,8 @@ final class AppModel {
     private func tick() {
         guard !probeActive else { return }
         let now = Date()
+        let uptime = ProcessInfo.processInfo.systemUptime
+        let idle = IdleSource.seconds()
         let timeZone = TimeZone.current
         let coordinates = TimeZoneCoordinates.coordinates(forIdentifier: timeZone.identifier)
         let isAuto = AppearanceSource.isAuto
@@ -90,8 +104,8 @@ final class AppModel {
 
         let input = EngineInput(
             now: now,
-            uptime: ProcessInfo.processInfo.systemUptime,
-            idle: IdleSource.seconds(),
+            uptime: uptime,
+            idle: idle,
             hasPostAccess: PostAccess.isGranted,
             isInhibited: session.isInhibited,
             appearanceIsAuto: isAuto,
@@ -99,6 +113,7 @@ final class AppModel {
             coordinates: coordinates,
             timeZone: timeZone
         )
+        checkLastPostTookEffect(idle: idle, uptime: uptime)
         let result = engine.tick(input, settings: settings)
 
         if result.shouldPost {
@@ -108,6 +123,7 @@ final class AppModel {
                 post: EventPoster.postZeroDistanceMove
             )
             if posted {
+                lastPostUptime = ProcessInfo.processInfo.systemUptime
                 Log.engine.notice("posted")
             } else {
                 Log.engine.notice("post skipped or failed")
@@ -125,6 +141,17 @@ final class AppModel {
         logStatusChange(result.status)
     }
 
+    private func checkLastPostTookEffect(idle: TimeInterval, uptime: TimeInterval) {
+        guard let lastPostUptime else { return }
+        if idle > (uptime - lastPostUptime) + 1 {
+            guard !noEffectLogged else { return }
+            noEffectLogged = true
+            Log.engine.error("post had no effect: idle \(idle, privacy: .public)s, last post \(uptime - lastPostUptime, privacy: .public)s ago")
+        } else {
+            noEffectLogged = false
+        }
+    }
+
     private func logStatusChange(_ status: EngineStatus) {
         let previous = lastLoggedStatus
         guard previous != status else { return }
@@ -133,7 +160,8 @@ final class AppModel {
         if case .steppingAside(let target) = status {
             Log.engine.notice("step-aside started, target \(target.rawValue, privacy: .public)")
         } else if case .steppingAside(let target)? = previous {
-            Log.engine.notice("step-aside ended, target \(target.rawValue, privacy: .public)")
+            let switched = effectiveAppearance == target
+            Log.engine.notice("step-aside ended, target \(target.rawValue, privacy: .public), appearance changed \(switched, privacy: .public)")
         }
     }
 }
