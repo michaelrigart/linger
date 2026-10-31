@@ -7,7 +7,8 @@ repository has no remote)
 **Revised:** 2026-10-31. The activity mechanism changed from
 `IOPMAssertionDeclareUserActivity` to a zero-distance mouse event, which needs the
 Accessibility permission. Michael decided this after the idle-timer measurements in
-Evidence.
+Evidence. Later the same day, Michael also accepted two undocumented signals for detecting a
+locked screen (see Constraints).
 
 ## Why
 
@@ -133,7 +134,12 @@ Linger has failed, even if it works, if it:
   `LSUIElement` so there is no Dock icon *(my call)*.
 - **App Store readiness from the first build.** App Sandbox and Hardened Runtime are on
   from day one, with no further entitlements in v1. Every system API used must be
-  public and allowed in the sandbox.
+  public and allowed in the sandbox. The one exception is screen-lock detection. macOS
+  has no documented screen-lock API, so Linger reads the undocumented
+  `CGSSessionScreenIsLocked` key from the public `CGSessionCopyCurrentDictionary()`. It
+  also observes the `com.apple.screenIsLocked` and `com.apple.screenIsUnlocked`
+  distributed notifications, and treats the screen as locked if either signal says so
+  *(Michael's decision, 2026-10-31)*.
 - **Identity.** Bundle identifier `com.michaelrigart.linger`. For local use it is signed
   with Michael's personal Apple development team if one is set up in Xcode, and
   ad-hoc otherwise. The Accessibility grant is tied to the code signature, so a stable
@@ -373,6 +379,9 @@ reason to replace XcodeGen.
   permission (2026-10-31).
 - Accept the rare cursor snap-back race that comes with it, and judge it in use
   (2026-10-31).
+- Detect a locked screen with two undocumented signals (the `CGSSessionScreenIsLocked`
+  session key and the `com.apple.screenIsLocked`/`screenIsUnlocked` notifications),
+  because no documented API exists (2026-10-31).
 
 **My calls** (Michael to confirm when reading):
 - Deployment target macOS 26.
