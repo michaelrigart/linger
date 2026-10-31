@@ -15,11 +15,15 @@ struct LingerApp: App {
     @State private var model = AppModel()
 
     var body: some Scene {
-        MenuBarExtra("Linger", systemImage: "circle") {
-            Text("Status: \(String(describing: model.output.status))")
-            Text("shouldPost: \(String(model.output.shouldPost))")
-            Divider()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+        MenuBarExtra {
+            PanelView(model: model)
+        } label: {
+            MenuBarIcon(model: model)
+        }
+        .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(model: model)
         }
     }
 }
