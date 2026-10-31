@@ -17,7 +17,7 @@ Command Line Tools.
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
 - Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
 - Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
-  then read it with `/usr/bin/log show --last 2m --info --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
+  then read it with `/usr/bin/log show --last 2m --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
 
 ## Rules an agent gets wrong
 
@@ -26,5 +26,7 @@ Command Line Tools.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.
 - The Accessibility (post-event) grant is tied to the code signature. Builds are ad-hoc
   signed, so every rebuild needs the grant given again.
-- A bare `log` is a zsh builtin. Use `/usr/bin/log`, and pass `--info` or the probe's
-  info-level lines are not shown.
+- A bare `log` is a zsh builtin. Use `/usr/bin/log`.
+- Engine and probe events are logged at notice level, which is persisted, so
+  `/usr/bin/log show` reads them without `--info`. Info-level lines are not persisted:
+  keep anything that must survive the process at notice or above.

@@ -25,12 +25,14 @@ final class AppModel {
     init() {
         settings = store.load()
         if !store.hasStoredIsOn {
+            #if !DEBUG
             do {
                 try LoginItem.setEnabled(true)
-                Log.engine.info("login item enabled on first launch")
+                Log.engine.notice("login item enabled on first launch")
             } catch {
                 Log.engine.error("login item failed: \(error.localizedDescription, privacy: .public)")
             }
+            #endif
             store.save(settings)
         }
 
@@ -98,9 +100,9 @@ final class AppModel {
                 post: EventPoster.postZeroDistanceMove
             )
             if posted {
-                Log.engine.info("posted")
+                Log.engine.notice("posted")
             } else {
-                Log.engine.info("post skipped or failed")
+                Log.engine.notice("post skipped or failed")
             }
         }
 
@@ -118,11 +120,11 @@ final class AppModel {
         let previous = lastLoggedStatus
         guard previous != status else { return }
         lastLoggedStatus = status
-        Log.engine.info("status: \(String(describing: status), privacy: .public)")
+        Log.engine.notice("status: \(String(describing: status), privacy: .public)")
         if case .steppingAside(let target) = status {
-            Log.engine.info("step-aside started, target \(target.rawValue, privacy: .public)")
+            Log.engine.notice("step-aside started, target \(target.rawValue, privacy: .public)")
         } else if case .steppingAside(let target)? = previous {
-            Log.engine.info("step-aside ended, target \(target.rawValue, privacy: .public)")
+            Log.engine.notice("step-aside ended, target \(target.rawValue, privacy: .public)")
         }
     }
 }
