@@ -1,0 +1,33 @@
+name: Linger
+options:
+  bundleIdPrefix: com.michaelrigart
+  deploymentTarget:
+    macOS: "26.0"
+packages:
+  LingerCore:
+    path: Packages/LingerCore
+targets:
+  Linger:
+    type: application
+    platform: macOS
+    sources: [Linger]
+    dependencies:
+      - package: LingerCore
+    info:
+      path: Linger/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: Linger
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+    entitlements:
+      path: Linger/Linger.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.michaelrigart.linger
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_VERSION: "6.0"
