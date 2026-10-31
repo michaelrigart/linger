@@ -6,6 +6,7 @@ import LingerCore
 @MainActor
 enum Probe {
     private static var task: Task<Void, Never>?
+    private static var session: SessionState?
 
     static func startIfRequested() {
         let defaults = UserDefaults.standard
@@ -16,11 +17,13 @@ enum Probe {
         let seconds = defaults.double(forKey: "LingerProbeSeconds")
 
         let log = Log.probe
+        let session = SessionState()
+        self.session = session
         log.notice("access granted: \(PostAccess.isGranted, privacy: .public)")
         log.notice("idle: \(IdleSource.seconds(), privacy: .public)")
         log.notice("isAuto: \(AppearanceSource.isAuto, privacy: .public)")
         log.notice("effective: \(AppearanceSource.effective.rawValue, privacy: .public)")
-        log.notice("inhibited: \(SessionState().isInhibited, privacy: .public)")
+        log.notice("inhibited: \(session.isInhibited, privacy: .public)")
 
         task = Task {
             let start = Date()
@@ -29,7 +32,9 @@ enum Probe {
                 if PostAccess.isGranted {
                     let location = CGEvent(source: nil)?.location
                     if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
-                    if let location {
+                    if session.isInhibited {
+                        log.notice("post skipped: session inhibited")
+                    } else if let location {
                         let posted = EventPoster.postMove(at: location)
                         log.notice("posted at \(location.x, privacy: .public),\(location.y, privacy: .public): \(posted, privacy: .public)")
                     }
