@@ -1,13 +1,10 @@
 # Linger
 
-Sandboxed macOS menu bar app (Swift 6, SwiftUI). It keeps Microsoft Teams "active" by
-posting a zero-distance mouse event, and steps aside around dusk and dawn so macOS Auto
-appearance can switch. Design: `docs/superpowers/specs/2026-10-30-linger-design.md`.
-Design-record rules (specs, plans, status, commits) are in the global agent instructions.
+Design and behaviour: `docs/superpowers/specs/2026-10-30-linger-design.md`.
 
 ## Commands
 
-Run all of these outside the Claude sandbox (`dangerouslyDisableSandbox`). SwiftPM's nested
+Run all of these outside any agent sandbox. SwiftPM's nested
 `sandbox-exec`, the module cache under `/var/folders`, the Xcode build service and the app's
 own event and log access all fail inside it. Prefix each with
 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`; `xcode-select` points at the
@@ -30,3 +27,8 @@ Command Line Tools.
 - Engine and probe events are logged at notice level, which is persisted, so
   `/usr/bin/log show` reads them without `--info`. Info-level lines are not persisted:
   keep anything that must survive the process at notice or above.
+- Launching `Linger.app/Contents/MacOS/Linger` from a terminal makes macOS attribute
+  Accessibility to the terminal. Permission readings only count when the app is started with
+  `open` or Finder.
+- Debug and Release share one sandbox container (same bundle ID), so stored defaults carry
+  over between them.
