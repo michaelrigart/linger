@@ -81,7 +81,7 @@ public struct ActivityEngine: Sendable {
         }
         if input.isInhibited {
             endAbsence()
-            return EngineOutput(status: .active(since: activeSince ?? input.now), shouldPost: false)
+            return EngineOutput(status: markActive(input.now), shouldPost: false)
         }
 
         guard isUserAway(idle: input.idle, uptime: input.uptime, idleDelay: settings.idleDelay) else {

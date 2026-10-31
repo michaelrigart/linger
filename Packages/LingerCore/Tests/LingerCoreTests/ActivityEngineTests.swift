@@ -189,6 +189,18 @@ private func inhibitorsNeverPost(_ c: InhibitorCase) {
     #expect(engine.isUserAway(idle: 2.0, uptime: 102, idleDelay: 60) == false)
 }
 
+@Test func inhibitedKeepsStableSince() {
+    var engine = ActivityEngine()
+    let settings = LingerSettings()
+    let first = engine.tick(input(uptime: 1000, idle: 600, now: midday, isInhibited: true), settings: settings)
+    let second = engine.tick(
+        input(uptime: 1005, idle: 605, now: midday.addingTimeInterval(5), isInhibited: true),
+        settings: settings
+    )
+    #expect(first.status == .active(since: midday))
+    #expect(second.status == .active(since: midday))
+}
+
 @Test func skipsPostWhenUserReturnsBeforePosting() {
     var engine = ActivityEngine()
     engine.didPost(atUptime: 100)
