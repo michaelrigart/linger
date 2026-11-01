@@ -27,6 +27,9 @@ Command Line Tools.
   the Accessibility list, and macOS won't prompt again while it exists. Clear it with
   `tccutil reset PostEvent com.michaelrigart.linger` (Michael runs this), or remove and
   re-add Linger in the list.
+- `CGPreflightPostEventAccess()` caches its answer for the life of the process, so on its
+  own it never sees a grant made while Linger runs. `AXIsProcessTrusted()` checks live,
+  and the switch in the Accessibility list sets exactly that permission.
 - A bare `log` is a zsh builtin. Use `/usr/bin/log`.
 - Engine and probe events are logged at notice level, which is persisted, so
   `/usr/bin/log show` reads them without `--info`. Info-level lines are not persisted:

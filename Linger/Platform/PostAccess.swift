@@ -1,8 +1,9 @@
 import AppKit
+import ApplicationServices
 import CoreGraphics
 
 enum PostAccess {
-    static var isGranted: Bool { CGPreflightPostEventAccess() }
+    static var isGranted: Bool { CGPreflightPostEventAccess() || AXIsProcessTrusted() }
 
     static func request() {
         guard !CGRequestPostEventAccess() else { return }
