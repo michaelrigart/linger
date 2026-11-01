@@ -42,7 +42,10 @@ to make room for it.
 brew install --cask michaelrigart/tap/linger
 ```
 
-If you copied Linger to `/Applications` yourself, remove that copy first.
+If you built or copied Linger yourself, quit it and delete that copy first, then run
+`tccutil reset All com.michaelrigart.linger` (or remove Linger from the Accessibility list).
+Your own build is signed differently from the Homebrew one, so its old Accessibility entry
+stays in the list, looks switched on, and stops macOS from asking again.
 
 Linger is signed with a free developer certificate and is not notarized, so macOS blocks
 it the first time you open it. Once, after the first install, open System Settings →

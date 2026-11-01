@@ -10,10 +10,9 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 team=CX4MWR5579
 repo=michaelrigart/linger
 
-if [[ -z "${DEVELOPER_DIR:-}" && "$(xcode-select -p)" == */CommandLineTools ]]; then
-  xcode=/Applications/Xcode.app/Contents/Developer
-  [[ -d "$xcode" ]] && export DEVELOPER_DIR="$xcode"
-fi
+export GIT_CONFIG_COUNT=2
+export GIT_CONFIG_KEY_0=commit.gpgsign GIT_CONFIG_VALUE_0=false
+export GIT_CONFIG_KEY_1=tag.gpgsign GIT_CONFIG_VALUE_1=false
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/linger-release-test.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
@@ -89,6 +88,22 @@ nosec="$work/nosec"
 mkdir -p "$nosec"
 printf '#!/bin/sh\nexit 0\n' >"$nosec/security"
 chmod +x "$nosec/security"
+
+failing_xcodebuild="$work/failing-xcodebuild"
+mkdir -p "$failing_xcodebuild"
+printf '#!/bin/sh\necho "xcodebuild stub: broken" >&2\nexit 1\n' >"$failing_xcodebuild/xcodebuild"
+chmod +x "$failing_xcodebuild/xcodebuild"
+
+failing_build="$work/failing-build"
+mkdir -p "$failing_build"
+cat >"$failing_build/xcodebuild" <<'STUB'
+#!/bin/sh
+case "$*" in
+  -version) echo "Xcode stub" ;;
+  *) echo "xcodebuild stub: build failed" >&2; exit 65 ;;
+esac
+STUB
+chmod +x "$failing_build/xcodebuild"
 
 new_scenario() {
   dir="$work/$1"
@@ -178,6 +193,8 @@ version="$(sed -n 's/^Version: //p' <<<"$output" | head -1)"
 expect "a: prints a YYYYMMDD-HHMM version" test -n "$version" -a "${#version}" -eq 13
 zip="$clone/build/release/Linger-$version.zip"
 expect "a: writes Linger-<version>.zip" test -f "$zip"
+zip_entries="$(zipinfo -1 "$zip")"
+expect "a: the zip holds no ._ AppleDouble entries" test -z "$(grep -E '(^|/)\._' <<<"$zip_entries" || true)"
 
 unpacked="$dir/unpacked"
 mkdir -p "$unpacked"
@@ -260,6 +277,17 @@ git -C "$clone" reset --quiet --hard origin/main
 PATH="$nosec:$PATH" run_release --dry-run --version "$v"
 expect_refused "b7: no signing identity for the team" "$team"
 
+echo "== c0: a broken Xcode refuses a new release before anything is committed"
+new_scenario xcode
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+refs_before="$(refs)"
+head_before="$(git -C "$clone" rev-parse HEAD)"
+PATH="$failing_xcodebuild:$PATH" run_release
+expect_refused "c0: xcodebuild does not work" "xcodebuild"
+expect "c0: no local commit" test "$(git -C "$clone" rev-parse HEAD)" == "$head_before"
+expect "c0: no tag" test -z "$(git -C "$clone" tag)"
+
 echo "== c: resume safety"
 new_scenario resume
 v=20260101-0900
@@ -326,6 +354,21 @@ expect "d: resuming a finished release exits 0" test "$status" -eq 0
 expect "d: resuming creates and uploads nothing" test -z "$(gh_writes)"
 expect "d: resuming adds no tap commit" test "$(git --git-dir="$STUB_DIR/tap.git" rev-list --count main)" == "$tap_commits"
 expect "d: resuming changes nothing on origin" test "$(refs)" == "$refs_before"
+
+echo "== e: a failure after the push says how to resume"
+new_scenario afterpush
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+snapshot="$(git -C "$clone" rev-parse HEAD)"
+PATH="$failing_build:$PATH" run_release
+expect "e: fails" test "$status" -ne 0
+v="$(sed -n 's/^Version: //p' <<<"$output" | head -1)"
+expect "e: prints the version it was cutting" test "${#v}" -eq 13
+expect "e: prints the resume command" contains "$output" "resume with: scripts/release --version $v"
+expect "e: only the release commit reached origin" test "$(git --git-dir="$bare" rev-list --count "$snapshot..main")" -eq 1
+expect "e: it is the release commit" test "$(git --git-dir="$bare" log -1 --format=%s main)" == "Release $v"
+expect "e: no tag reached origin" test -z "$(git --git-dir="$bare" tag)"
+expect "e: gh is not asked to write" test -z "$(gh_writes)"
 
 if [[ $failures -ne 0 ]]; then
   echo "$failures of $cases cases failed" >&2

@@ -20,6 +20,7 @@ already points at Xcode.
 - Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
   `scripts/tests/test-verify-app <Linger.app>`. Both take a Release build, and the test needs
   one made with the default version
+- Changelog tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'`
 - Release: `scripts/release [--dry-run] [--version <YYYYMMDD-HHMM>]`. Michael runs it; an agent
   only with his go-ahead, since it pushes to `main`, tags, creates a GitHub release and pushes
   to the Homebrew tap. `--dry-run` builds, verifies and packages into `build/release/` and
@@ -36,8 +37,8 @@ already points at Xcode.
 ## Rules an agent gets wrong
 
 - A user-visible change adds an entry to `CHANGELOG.md` under `## [Unreleased]`, in `### Added`,
-  `### Changed`, `### Fixed` or `### Removed`. `scripts/release` refuses to run without one, and
-  moves them under the new version.
+  `### Changed`, `### Fixed` or `### Removed`. A new `scripts/release` run refuses without one
+  (resuming with `--version` does not check), and moves them under the new version.
 - `LingerCore` must not import AppKit or SwiftUI. Platform code lives in the app target.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.

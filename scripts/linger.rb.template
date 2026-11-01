@@ -20,7 +20,7 @@ cask "linger" do
 
   uninstall quit: "com.michaelrigart.linger"
 
-  zap trash: "~/Library/Containers/com.michaelrigart.linger"
+  zap trash: ["~/Library/Application Scripts/com.michaelrigart.linger", "~/Library/Containers/com.michaelrigart.linger"]
 
   caveats <<~EOS
     Linger is signed but not notarized, so macOS blocks its first launch.

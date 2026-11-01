@@ -13,6 +13,8 @@ BASE = f"https://github.com/{REPO}"
 
 WITH_EARLIER = f"""# Changelog
 
+All notable changes are recorded here.
+
 ## [Unreleased]
 
 ### Added
@@ -44,17 +46,16 @@ FIRST = f"""# Changelog
 class ReleaseTests(unittest.TestCase):
     def test_release_moves_unreleased_entries(self):
         out = changelog.release(WITH_EARLIER, "20261102-0905", REPO)
-        self.assertIn(
-            "## [Unreleased]\n\n## [20261102-0905] - 2026-11-02\n\n### Added\n\n- X\n\n"
-            "## [20261101-1430] - 2026-11-01\n",
+        self.assertEqual(
             out,
+            "# Changelog\n\nAll notable changes are recorded here.\n\n"
+            "## [Unreleased]\n\n"
+            "## [20261102-0905] - 2026-11-02\n\n### Added\n\n- X\n\n"
+            "## [20261101-1430] - 2026-11-01\n\n### Fixed\n\n- Y\n\n"
+            f"[Unreleased]: {BASE}/compare/20261102-0905...HEAD\n"
+            f"[20261102-0905]: {BASE}/compare/20261101-1430...20261102-0905\n"
+            f"[20261101-1430]: {BASE}/releases/tag/20261101-1430\n",
         )
-        self.assertIn(f"[Unreleased]: {BASE}/compare/20261102-0905...HEAD\n", out)
-        self.assertIn(
-            f"[20261102-0905]: {BASE}/compare/20261101-1430...20261102-0905\n", out
-        )
-        self.assertIn(f"[20261101-1430]: {BASE}/releases/tag/20261101-1430\n", out)
-        self.assertEqual(out.count("[Unreleased]:"), 1)
 
     def test_first_release_links_to_its_release(self):
         out = changelog.release(FIRST, "20261102-0905", REPO)
