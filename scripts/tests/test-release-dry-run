@@ -20,6 +20,9 @@ trap 'rm -rf "$work"' EXIT
 failures=0
 cases=0
 
+fixture_entry="Fixture change waiting for a release."
+fixture_earlier=20250101-0900
+
 pass() {
   cases=$((cases + 1))
   echo "ok   $1"
@@ -114,7 +117,10 @@ new_scenario() {
   : >"$STUB_DIR/calls.log"
 
   git clone --quiet --bare "$root" "$bare"
+  git --git-dir="$bare" for-each-ref --format='%(refname)' refs/tags |
+    while IFS= read -r tag; do git --git-dir="$bare" update-ref -d "$tag"; done
   git clone --quiet "$bare" "$clone"
+  assert_no_tags
   git -C "$clone" config user.name "Release Test"
   git -C "$clone" config user.email "release-test@example.invalid"
   git -C "$clone" config commit.gpgsign false
@@ -128,11 +134,42 @@ new_scenario() {
     done |
     tar -C "$root" --null -T - -cf - |
     tar -C "$clone" -xf -
+  fixture_changelog >"$clone/CHANGELOG.md"
   git -C "$clone" add -A
   git -C "$clone" commit --quiet --allow-empty -m "Snapshot for the test"
 
   tap_remote
   export MISE_TRUSTED_CONFIG_PATHS="$clone"
+}
+
+fixture_changelog() {
+  cat <<EOF
+# Changelog
+
+Fixture preamble.
+
+## [Unreleased]
+
+### Added
+
+- $fixture_entry
+
+## [$fixture_earlier] - 2025-01-01
+
+### Added
+
+- Fixture change from an earlier release.
+
+[Unreleased]: https://github.com/$repo/compare/$fixture_earlier...HEAD
+[$fixture_earlier]: https://github.com/$repo/releases/tag/$fixture_earlier
+EOF
+}
+
+assert_no_tags() {
+  if [[ -n "$(git --git-dir="$bare" tag)" || -n "$(git -C "$clone" tag)" ]]; then
+    echo "ABORT: $dir inherited tags from $root" >&2
+    exit 3
+  fi
 }
 
 assert_local_origin() {
@@ -204,12 +241,9 @@ verify_output="$("$root/scripts/verify-app" --team "$team" "$unpacked/Linger.app
 expect "a: the packaged app passes verify-app --team $team <version>" test "$verify_status" -eq 0
 if [[ "$verify_status" -ne 0 ]]; then echo "$verify_output" >&2; fi
 
-expected_notes="$(
-  cp "$root/CHANGELOG.md" "$dir/CHANGELOG.copy.md"
-  "$root/scripts/changelog.py" release "$version" --repo "$repo" --file "$dir/CHANGELOG.copy.md"
-  "$root/scripts/changelog.py" notes "$version" --file "$dir/CHANGELOG.copy.md"
-)"
-expect "a: prints the changelog section it would commit" contains "$output" "$expected_notes"
+expected_notes="$(printf '### Added\n\n- %s' "$fixture_entry")"
+expect "a: prints the changelog section it would commit" contains "$output" "Changelog section for $version:"$'\n'"$expected_notes"
+expect "a: the section holds only the fixture's text" lacks "$output" "Linger keeps your Mac active"
 
 cask="$clone/build/release/linger.rb"
 expect "a: renders the cask" test -f "$cask"
@@ -369,6 +403,40 @@ expect "e: only the release commit reached origin" test "$(git --git-dir="$bare"
 expect "e: it is the release commit" test "$(git --git-dir="$bare" log -1 --format=%s main)" == "Release $v"
 expect "e: no tag reached origin" test -z "$(git --git-dir="$bare" tag)"
 expect "e: gh is not asked to write" test -z "$(gh_writes)"
+
+echo "== f: a rejected push of the release commit leaves nothing to clean up"
+new_scenario pushfail
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+head_before="$(git -C "$clone" rev-parse HEAD)"
+changelog_before="$(sha_of "$clone/CHANGELOG.md")"
+refs_before="$(refs)"
+mkdir -p "$bare/hooks"
+printf '#!/bin/sh\necho "pre-receive: rejected by the test" >&2\nexit 1\n' >"$bare/hooks/pre-receive"
+chmod +x "$bare/hooks/pre-receive"
+run_release
+expect "f: fails" test "$status" -ne 0
+expect "f: says nothing was released" contains "$output" "nothing was released"
+expect "f: says to run the script again" contains "$output" "run scripts/release again"
+expect "f: says how to continue if the push did land" contains "$output" "already has 'Release "
+expect "f: gives no post-push resume hint" lacks "$output" "failed after pushing the release commit"
+expect "f: local HEAD is back where it was" test "$(git -C "$clone" rev-parse HEAD)" == "$head_before"
+expect "f: CHANGELOG.md is unchanged" test "$(sha_of "$clone/CHANGELOG.md")" == "$changelog_before"
+expect "f: the tree is clean" test -z "$(git -C "$clone" status --porcelain)"
+expect "f: origin is unchanged" test "$(refs)" == "$refs_before"
+expect "f: nothing built" test ! -e "$clone/build"
+expect "f: no local tag" test -z "$(git -C "$clone" tag)"
+expect "f: gh is never asked to write" test -z "$(gh_writes)"
+
+rm "$bare/hooks/pre-receive"
+run_release
+if [[ "$status" -ne 0 ]]; then echo "$output" >&2; fi
+expect "f: a plain retry exits 0" test "$status" -eq 0
+v="$(git --git-dir="$bare" tag | head -1)"
+expect "f: the retry pushes one tag named like a version" test "$(git --git-dir="$bare" tag | wc -l | tr -d ' ')" -eq 1 -a "${#v}" -eq 13
+expect "f: the retry pushes the release commit to main" test "$(git --git-dir="$bare" log -1 --format=%s main)" == "Release $v"
+expect "f: the retry publishes the release" contains "$(cat "$STUB_DIR/calls.log")" "release create $v"
+expect "f: the retry updates the cask" contains "$(tap_cask)" "version \"$v\""
 
 if [[ $failures -ne 0 ]]; then
   echo "$failures of $cases cases failed" >&2

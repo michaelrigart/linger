@@ -139,9 +139,13 @@ elif (( dry_run )); then
 else
   changelog="$root/CHANGELOG.md"
   scripts/changelog.py release "$version" --repo "$repo"
+  before_release="$(git rev-parse HEAD)"
   git add CHANGELOG.md
   git commit -q -m "Release $version"
-  git push -q origin HEAD:main
+  if ! git push -q origin HEAD:main; then
+    git reset -q --hard "$before_release"
+    die "the push of 'Release $version' failed, so nothing was released and the local release commit is gone; run scripts/release again. If origin/main already has 'Release $version' (a push that landed despite the error), pull it and resume with: scripts/release --version $version"
+  fi
   pushed=1
 fi
 scripts/changelog.py notes "$version" --file "$changelog" >"$work/notes.md"
