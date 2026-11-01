@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+catalog="$root/Linger/Assets.xcassets"
+icons="$catalog/AppIcon.appiconset"
+
+command -v rsvg-convert >/dev/null || { echo "needs rsvg-convert (Homebrew librsvg)" >&2; exit 1; }
+
+for pair in filled:LingerMenuBar outline:LingerMenuBarOutline half:LingerMenuBarHalf; do
+  rsvg-convert -w 36 -h 36 "$root/design/menubar/${pair%%:*}.svg" \
+    -o "$catalog/${pair##*:}.imageset/${pair##*:}@2x.png"
+done
+
+/usr/bin/python3 "$root/design/menubar/pixel1x.py" "$catalog" >/dev/null
+
+/usr/bin/python3 - "$icons/Contents.json" <<'PY' | while read -r file px; do
+import json, sys
+for image in json.load(open(sys.argv[1]))["images"]:
+    base = int(image["size"].split("x")[0])
+    print(image["filename"], base * int(image["scale"].rstrip("x")))
+PY
+  rsvg-convert -w "$px" -h "$px" "$root/design/app-icon.svg" -o "$icons/$file"
+done

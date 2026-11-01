@@ -20,6 +20,8 @@ already points at Xcode.
 - Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
   `scripts/tests/test-verify-app <Linger.app>`. Both take a Release build, and the test needs
   one made with the default version
+- Artwork sources live in `design/`; `design/render` regenerates every PNG in the asset catalog from
+  them. It needs `rsvg-convert` (Homebrew `librsvg`, not in the maintainer's Brewfile)
 - Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
   then read it with `/usr/bin/log show --last 2m --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
 

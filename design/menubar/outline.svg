@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="11.35 14 77.29 66.54" preserveAspectRatio="none">
+<defs>
+<mask id="gap"><rect x="0" y="0" width="100" height="100" fill="#fff"/><path d="M30.8 49.1C31.9 38.4 39.7 31.4 50 31.4S68.1 38.4 69.2 49.1C62.3 52.2 57 54.2 50 54.2S37.7 52.2 30.8 49.1Z" fill="#000" stroke="#000" stroke-width="6"/></mask>
+<clipPath id="sun"><path d="M30.8 49.1C31.9 38.4 39.7 31.4 50 31.4S68.1 38.4 69.2 49.1C62.3 52.2 57 54.2 50 54.2S37.7 52.2 30.8 49.1Z"/></clipPath>
+<clipPath id="left"><rect x="0" y="0" width="50" height="100"/></clipPath>
+</defs>
+<path d="M13.5 47.5C28 46 36 55.7 50 55.7S72 46 86.5 47.5V57.5C72 56 64 66.5 50 66.5S28 56 13.5 57.5Z" mask="url(#gap)"/>
+<path d="M30.8 49.1C31.9 38.4 39.7 31.4 50 31.4S68.1 38.4 69.2 49.1C62.3 52.2 57 54.2 50 54.2S37.7 52.2 30.8 49.1Z" fill="none" stroke="#000" stroke-width="8.8" clip-path="url(#sun)"/></svg>
