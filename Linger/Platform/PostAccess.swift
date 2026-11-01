@@ -3,10 +3,11 @@ import ApplicationServices
 import CoreGraphics
 
 enum PostAccess {
-    static var isGranted: Bool { CGPreflightPostEventAccess() || AXIsProcessTrusted() }
+    static var isGranted: Bool { AXIsProcessTrusted() }
 
     static func request() {
-        guard !CGRequestPostEventAccess() else { return }
+        _ = CGRequestPostEventAccess()
+        guard !isGranted else { return }
         NSWorkspace.shared.open(accessibilitySettings)
     }
 

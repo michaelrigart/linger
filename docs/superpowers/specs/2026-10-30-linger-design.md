@@ -200,7 +200,9 @@ Linger has failed, even if it works, if it:
 
 ### Accessibility permission
 
-- Linger checks `CGPreflightPostEventAccess()` at launch and whenever the panel opens.
+- Linger checks `AXIsProcessTrusted()` at launch, on each poll tick and whenever the panel
+  opens. It doesn't use `CGPreflightPostEventAccess()`, which caches its answer for the
+  life of the process and so misses both a grant and a revocation while Linger runs.
 - While access is missing:
   - The status line reads "Needs permission to keep you active".
   - The on/off switch is disabled.
