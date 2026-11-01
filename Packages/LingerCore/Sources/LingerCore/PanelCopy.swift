@@ -43,11 +43,11 @@ public enum PanelCopy {
         coordinates == nil ? "Location unknown" : "Estimated from time zone (\(identifier))"
     }
 
-    public static func iconSymbol(_ s: EngineStatus) -> String {
+    public static func menuBarImage(_ s: EngineStatus) -> String {
         switch s {
-        case .active: "circle.fill"
-        case .steppingAside: "circle.lefthalf.filled"
-        case .off, .needsPermission, .paused: "circle"
+        case .active: "LingerMenuBar"
+        case .steppingAside: "LingerMenuBarHalf"
+        case .off, .needsPermission, .paused: "LingerMenuBarOutline"
         }
     }
 

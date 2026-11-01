@@ -32,7 +32,7 @@ import Testing
 @Test func locationAndIcons() {
     #expect(PanelCopy.locationLine(identifier: "Europe/Brussels", coordinates: Coordinates(latitude: 50.8333, longitude: 4.3333)) == "Estimated from time zone (Europe/Brussels)")
     #expect(PanelCopy.locationLine(identifier: "UTC", coordinates: nil) == "Location unknown")
-    #expect(PanelCopy.iconSymbol(.active(since: .now)) == "circle.fill")
-    #expect(PanelCopy.iconSymbol(.steppingAside(target: .light)) == "circle.lefthalf.filled")
-    for s in [EngineStatus.off, .needsPermission, .paused(until: .now)] { #expect(PanelCopy.iconSymbol(s) == "circle") }
+    #expect(PanelCopy.menuBarImage(.active(since: .now)) == "LingerMenuBar")
+    #expect(PanelCopy.menuBarImage(.steppingAside(target: .light)) == "LingerMenuBarHalf")
+    for s in [EngineStatus.off, .needsPermission, .paused(until: .now)] { #expect(PanelCopy.menuBarImage(s) == "LingerMenuBarOutline") }
 }
