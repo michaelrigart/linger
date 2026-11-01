@@ -8,7 +8,7 @@ usage() {
 
 team=""
 if [[ "${1:-}" == "--team" ]]; then
-  [[ $# -ge 2 ]] || usage
+  [[ $# -ge 2 && -n "$2" ]] || usage
   team="$2"
   shift 2
 fi
@@ -61,7 +61,7 @@ if [[ -n "$version" ]]; then
 fi
 
 if [[ -n "$team" ]]; then
-  actual_team="$(codesign -dvv "$app" 2>&1 | sed -n 's/^TeamIdentifier=//p')"
+  actual_team="$(codesign -dvv "$app" 2>&1 | sed -n 's/^TeamIdentifier=//p' || true)"
   if [[ "$actual_team" != "$team" ]]; then
     fail "TeamIdentifier is '${actual_team:-none}', expected '$team'"
   fi

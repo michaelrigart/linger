@@ -106,6 +106,29 @@ check "h: baseline passes" pass "$verify" "$copy"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Tampered" "$copy/Contents/Info.plist"
 check "h: a modified bundle fails the signature check" fail "$verify" "$copy"
 
+check_run() {
+  local name="$1" expected_status="$2" expected_stderr="$3" status=0 err
+  shift 3
+  cases=$((cases + 1))
+  err="$("$@" 2>&1 >/dev/null)" || status=$?
+  if [[ "$status" -eq "$expected_status" && "$err" == *"$expected_stderr"* ]]; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name: expected status $expected_status with '$expected_stderr', got status $status and '$err'" >&2
+    failures=$((failures + 1))
+  fi
+}
+
+copy="$(fresh_copy)"
+check "i: baseline passes" pass "$verify" "$copy"
+check_run "i: an empty --team is a usage error" 2 usage "$verify" --team "" "$copy"
+check_run "i: --team without an ID is a usage error" 2 usage "$verify" --team
+
+copy="$(fresh_copy)"
+check "j: baseline passes" pass "$verify" "$copy"
+codesign --remove-signature "$copy" 2>/dev/null
+check_run "j: --team on an unsigned bundle still reports the team" 1 "TeamIdentifier is 'none'" "$verify" --team "$team" "$copy"
+
 if [[ $failures -ne 0 ]]; then
   echo "$failures of $cases cases failed" >&2
   exit 1

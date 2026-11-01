@@ -14,9 +14,12 @@ already points at Xcode.
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
 - Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
-- Build without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to the build command
+- Release build (the only kind `scripts/verify-app` accepts): `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build -quiet build`.
+  Debug builds carry `get-task-allow` and always fail the verifier's exact-entitlements check.
+- Release build without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to the Release build command
 - Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
-  `scripts/tests/test-verify-app <Linger.app>`, run against a build made with the default version
+  `scripts/tests/test-verify-app <Linger.app>`. Both take a Release build, and the test needs
+  one made with the default version
 - Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
   then read it with `/usr/bin/log show --last 2m --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
 
