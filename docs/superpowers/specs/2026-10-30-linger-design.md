@@ -152,15 +152,14 @@ Linger has failed, even if it works, if it:
   signature matters. No code-signing identity was set up for v1, so
   ad-hoc builds need the grant renewed after every reinstall, until an Apple ID is added
   in Xcode for a free Personal Team development certificate.
-- **Toolchain.** Xcode is installed at `/Applications/Xcode.app`, but `xcode-select`
-  points at the Command Line Tools. Pass
-  `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` per command. Don't change
-  the global selection, which needs sudo and is Michael's call.
+- **Toolchain.** Builds need the full Xcode. Where `xcode-select` points at the Command
+  Line Tools, pass `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` per command
+  rather than changing the global selection, which needs sudo.
 - **Tools** are never installed ad hoc. XcodeGen (`project.yml`) generates the Xcode
   project, so the project stays readable and reviewable as text. It is pinned in the
   repository's own `mise.toml`, the way provisioning repositories pin Ansible, so the
   dotfiles don't change *(my call; the builder may choose otherwise, with a reason)*.
-- **Repository.** `~/Code/linger`. No remote yet; Michael decides where it goes.
+- **Repository.** [michaelrigart/linger](https://github.com/michaelrigart/linger), public.
 
 ## How it works
 

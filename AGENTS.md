@@ -8,8 +8,8 @@ Design-record rules (specs, plans, status, commits) are in the global agent inst
 Run all of these outside any agent sandbox. SwiftPM's nested
 `sandbox-exec`, the module cache under `/var/folders`, the Xcode build service and the app's
 own event and log access all fail inside it. Prefix each with
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`; `xcode-select` points at the
-Command Line Tools.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` unless `xcode-select -p`
+already points at Xcode.
 
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
