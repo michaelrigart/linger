@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-01
 **Owner:** Michael Rigart
-**Status:** In progress ([PR #2](https://github.com/michaelrigart/linger/pull/2))
+**Status:** Implemented ([PR #2](https://github.com/michaelrigart/linger/pull/2))
 
 ## Why
 

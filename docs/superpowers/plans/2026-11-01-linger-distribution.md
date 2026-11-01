@@ -2,7 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** In progress ([PR #2](https://github.com/michaelrigart/linger/pull/2))
+**Status:** Implemented ([PR #2](https://github.com/michaelrigart/linger/pull/2)). All
+tasks are complete, including the acceptance before merge; do not run this plan again.
+Progress was tracked outside this file, so the step checkboxes below stay unticked.
 
 **Goal:** Sign Linger with Michael's Personal Team, version releases as `YYYYMMDD-HHMM`,
 keep a changelog, test and build in CI, cut releases with one local script, publish a
