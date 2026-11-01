@@ -49,6 +49,10 @@ already points at Xcode.
   grant given again. The old build's entry stays in the Accessibility list, and macOS won't
   prompt again while it exists. Clear it with `tccutil reset All com.michaelrigart.linger`
   (Michael runs this), or remove and re-add Linger in the list.
+- When the grant is given, macOS may record the signature of any copy of Linger that
+  Launch Services knows, not the one running. Before granting, rebuild or delete every ad
+  hoc copy, including an old Debug build under `build/`. Otherwise Linger stays at
+  `needsPermission` and `tccd` logs "Failed to match existing code requirement".
 - Check access with `AXIsProcessTrusted()` only. `CGPreflightPostEventAccess()` caches its
   answer for the life of the process, so it misses a grant or a revocation while Linger
   runs, and combining it with the live check lets a stale "granted" mask a revocation.
