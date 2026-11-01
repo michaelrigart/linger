@@ -143,8 +143,10 @@ else
   git add CHANGELOG.md
   git commit -q -m "Release $version"
   if ! git push -q origin HEAD:main; then
-    git reset -q --hard "$before_release"
-    die "the push of 'Release $version' failed, so nothing was released and the local release commit is gone; run scripts/release again. If origin/main already has 'Release $version' (a push that landed despite the error), pull it and resume with: scripts/release --version $version"
+    if ! git reset -q --keep "$before_release"; then
+      die "the push of 'Release $version' failed and nothing was released, but the local 'Release $version' commit is still there because CHANGELOG.md has local edits; save those edits, run: git reset --keep $before_release   and then run scripts/release again"
+    fi
+    die "the push of 'Release $version' failed, so nothing was released and the local release commit is gone (any other local edits were kept); run scripts/release again. If origin/main already has 'Release $version' (a push that landed despite the error), pull it and resume with: scripts/release --version $version"
   fi
   pushed=1
 fi

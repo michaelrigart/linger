@@ -438,6 +438,52 @@ expect "f: the retry pushes the release commit to main" test "$(git --git-dir="$
 expect "f: the retry publishes the release" contains "$(cat "$STUB_DIR/calls.log")" "release create $v"
 expect "f: the retry updates the cask" contains "$(tap_cask)" "version \"$v\""
 
+echo "== f2: a rejected push keeps an unrelated edit saved while it waited"
+new_scenario pushfail-edit
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+head_before="$(git -C "$clone" rev-parse HEAD)"
+changelog_before="$(sha_of "$clone/CHANGELOG.md")"
+refs_before="$(refs)"
+mkdir -p "$bare/hooks"
+printf '#!/bin/sh\necho "edited while waiting" >>"%s/README.md"\necho "pre-receive: rejected by the test" >&2\nexit 1\n' "$clone" >"$bare/hooks/pre-receive"
+chmod +x "$bare/hooks/pre-receive"
+run_release
+expect "f2: fails" test "$status" -ne 0
+expect "f2: says nothing was released" contains "$output" "nothing was released"
+expect "f2: says other local edits were kept" contains "$output" "other local edits were kept"
+expect "f2: gives no post-push resume hint" lacks "$output" "failed after pushing the release commit"
+expect "f2: local HEAD is back where it was" test "$(git -C "$clone" rev-parse HEAD)" == "$head_before"
+expect "f2: CHANGELOG.md is unchanged" test "$(sha_of "$clone/CHANGELOG.md")" == "$changelog_before"
+expect "f2: the README.md edit survives" contains "$(cat "$clone/README.md")" "edited while waiting"
+expect "f2: origin is unchanged" test "$(refs)" == "$refs_before"
+expect "f2: nothing built" test ! -e "$clone/build"
+expect "f2: no local tag" test -z "$(git -C "$clone" tag)"
+expect "f2: gh is never asked to write" test -z "$(gh_writes)"
+
+echo "== f3: a rejected push with an edited CHANGELOG.md keeps the release commit"
+new_scenario pushfail-changelog
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+head_before="$(git -C "$clone" rev-parse HEAD)"
+refs_before="$(refs)"
+mkdir -p "$bare/hooks"
+printf '#!/bin/sh\necho "edited while waiting" >>"%s/CHANGELOG.md"\necho "pre-receive: rejected by the test" >&2\nexit 1\n' "$clone" >"$bare/hooks/pre-receive"
+chmod +x "$bare/hooks/pre-receive"
+run_release
+expect "f3: fails" test "$status" -ne 0
+expect "f3: says nothing was released" contains "$output" "nothing was released"
+expect "f3: says the release commit is still there" contains "$output" "is still there"
+expect "f3: names the recovery command with the original sha" contains "$output" "git reset --keep $head_before"
+expect "f3: gives no post-push resume hint" lacks "$output" "failed after pushing the release commit"
+v="$(sed -n 's/^Version: //p' <<<"$output" | head -1)"
+expect "f3: the release commit is still HEAD" test "$(git -C "$clone" log -1 --format=%s)" == "Release $v"
+expect "f3: the CHANGELOG.md edit is still present" contains "$(cat "$clone/CHANGELOG.md")" "edited while waiting"
+expect "f3: origin is unchanged" test "$(refs)" == "$refs_before"
+expect "f3: nothing built" test ! -e "$clone/build"
+expect "f3: no local tag" test -z "$(git -C "$clone" tag)"
+expect "f3: gh is never asked to write" test -z "$(gh_writes)"
+
 if [[ $failures -ne 0 ]]; then
   echo "$failures of $cases cases failed" >&2
   exit 1
