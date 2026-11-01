@@ -7,6 +7,8 @@ whether it is compatible with the one before. Each section says what changed.
 
 ## [Unreleased]
 
+## [20261101-2151] - 2026-11-01
+
 ### Added
 
 - Linger keeps your Mac active while you're away.
@@ -19,4 +21,5 @@ whether it is compatible with the one before. Each section says what changed.
 - Install with Homebrew: `brew install --cask michaelrigart/tap/linger`.
 - Releases are signed, so the Accessibility permission you give Linger survives updates.
 
-[Unreleased]: https://github.com/michaelrigart/linger/commits/main
+[Unreleased]: https://github.com/michaelrigart/linger/compare/20261101-2151...HEAD
+[20261101-2151]: https://github.com/michaelrigart/linger/releases/tag/20261101-2151
