@@ -14,6 +14,9 @@ already points at Xcode.
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
 - Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
+- Build without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to the build command
+- Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
+  `scripts/tests/test-verify-app <Linger.app>`, run against a build made with the default version
 - Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
   then read it with `/usr/bin/log show --last 2m --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
 
@@ -22,11 +25,13 @@ already points at Xcode.
 - `LingerCore` must not import AppKit or SwiftUI. Platform code lives in the app target.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.
-- The Accessibility (post-event) grant is tied to the code signature. Builds are ad-hoc
-  signed, so every rebuild needs the grant given again. The old build's entry stays in
-  the Accessibility list, and macOS won't prompt again while it exists. Clear it with
-  `tccutil reset All com.michaelrigart.linger` (Michael runs this), or remove and
-  re-add Linger in the list.
+- The Accessibility (post-event) grant is tied to the code signature. Builds are signed
+  with Michael's Personal Team (manual signing, no provisioning profile), whose designated
+  requirement names the certificate, so the grant survives rebuilds. Ad hoc builds
+  (the override above) have a per-build signature: for those only, every rebuild needs the
+  grant given again. The old build's entry stays in the Accessibility list, and macOS won't
+  prompt again while it exists. Clear it with `tccutil reset All com.michaelrigart.linger`
+  (Michael runs this), or remove and re-add Linger in the list.
 - Check access with `AXIsProcessTrusted()` only. `CGPreflightPostEventAccess()` caches its
   answer for the life of the process, so it misses a grant or a revocation while Linger
   runs, and combining it with the live check lets a stale "granted" mask a revocation.
