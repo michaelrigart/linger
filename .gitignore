@@ -1,2 +1,5 @@
 .superpowers/
 docs/superpowers/runs/
+Linger.xcodeproj/
+build/
+.build/
