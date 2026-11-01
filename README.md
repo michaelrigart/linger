@@ -33,19 +33,39 @@ to make room for it.
 
 ## Requirements
 
-- macOS 26 or later.
+- macOS 26 or later, on Apple silicon.
 - To build: Xcode 26 or later, and [mise](https://mise.jdx.dev) for XcodeGen.
+
+## Install
+
+```sh
+brew install --cask michaelrigart/tap/linger
+```
+
+If you copied Linger to `/Applications` yourself, remove that copy first.
+
+Linger is signed with a free developer certificate and is not notarized, so macOS blocks
+it the first time you open it. Once, after the first install, open System Settings →
+Privacy & Security, find the message about Linger and click **Open Anyway**. Then click
+**Allow…** in Linger's menu and switch Linger on in the Accessibility list that opens
+(System Settings → Privacy & Security → Accessibility).
+
+Upgrade with `brew upgrade --cask linger`. Releases are signed with the same certificate,
+so an upgrade should need neither step again. If macOS asks anyway, repeat them.
 
 ## Build and install
 
-There are no signed releases yet, so build it yourself. The build needs the full Xcode. If
-`xcode-select -p` points at the Command Line Tools, prefix the `xcodebuild` and `swift`
-commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+To build it yourself, you need the full Xcode. If `xcode-select -p` points at the Command
+Line Tools, prefix the `xcodebuild` and `swift` commands with
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+
+The project is set up to sign with the maintainer's certificate, which you won't have.
+Add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to `xcodebuild` to sign ad hoc instead.
 
 ```sh
 mise trust mise.toml
 mise exec -- xcodegen generate
-xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build -quiet build
+xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
 ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
 open /Applications/Linger.app
 ```
@@ -63,9 +83,14 @@ tccutil reset All com.michaelrigart.linger
 open /Applications/Linger.app
 ```
 
-Builds are signed ad hoc, so macOS treats each new build as a different app, and the old
-build's Accessibility entry stays in the list without working. The `tccutil` line clears
-it; then click **Allow…** and switch Linger on again.
+An ad hoc build is a different app to macOS every time you rebuild it, so you need to give
+the Accessibility permission again, and the old build's entry stays in the list without
+working. The `tccutil` line clears it; then click **Allow…** and switch Linger on again.
+
+## Releasing
+
+The maintainer cuts a release with `scripts/release`. It needs the signing certificate, so
+it runs on the maintainer's Mac, not in CI. `CHANGELOG.md` lists what each release changed.
 
 ## Tests
 

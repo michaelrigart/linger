@@ -20,6 +20,14 @@ already points at Xcode.
 - Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
   `scripts/tests/test-verify-app <Linger.app>`. Both take a Release build, and the test needs
   one made with the default version
+- Release: `scripts/release [--dry-run] [--version <YYYYMMDD-HHMM>]`. Michael runs it; an agent
+  only with his go-ahead, since it pushes to `main`, tags, creates a GitHub release and pushes
+  to the Homebrew tap. `--dry-run` builds, verifies and packages into `build/release/` and
+  prints the changelog section; it commits and pushes nothing. `--version` resumes an earlier
+  run. Its test, `scripts/tests/test-release-dry-run`, runs the script in temporary clones whose
+  `origin` is a local bare repository, with a stub `gh`, so it never reaches GitHub. It builds
+  and signs, so it needs the certificate and runs on Michael's Mac, not in CI
+- CI builds ad hoc with the override above, so release signing happens only on Michael's Mac
 - Artwork sources live in `design/`; `design/render` regenerates every PNG in the asset catalog from
   them. It needs `rsvg-convert` (Homebrew `librsvg`, not in the maintainer's Brewfile)
 - Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
@@ -27,6 +35,9 @@ already points at Xcode.
 
 ## Rules an agent gets wrong
 
+- A user-visible change adds an entry to `CHANGELOG.md` under `## [Unreleased]`, in `### Added`,
+  `### Changed`, `### Fixed` or `### Removed`. `scripts/release` refuses to run without one, and
+  moves them under the new version.
 - `LingerCore` must not import AppKit or SwiftUI. Platform code lives in the app target.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.

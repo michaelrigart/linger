@@ -1,0 +1,334 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 0 ]]; then
+  echo "usage: $0" >&2
+  exit 2
+fi
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+team=CX4MWR5579
+repo=michaelrigart/linger
+
+if [[ -z "${DEVELOPER_DIR:-}" && "$(xcode-select -p)" == */CommandLineTools ]]; then
+  xcode=/Applications/Xcode.app/Contents/Developer
+  [[ -d "$xcode" ]] && export DEVELOPER_DIR="$xcode"
+fi
+
+work="$(mktemp -d "${TMPDIR:-/tmp}/linger-release-test.XXXXXX")"
+trap 'rm -rf "$work"' EXIT
+
+failures=0
+cases=0
+
+pass() {
+  cases=$((cases + 1))
+  echo "ok   $1"
+}
+
+fail() {
+  cases=$((cases + 1))
+  failures=$((failures + 1))
+  echo "FAIL $1" >&2
+}
+
+expect() {
+  local name="$1"
+  shift
+  if "$@"; then pass "$name"; else fail "$name"; fi
+}
+
+contains() { [[ "$1" == *"$2"* ]]; }
+lacks() { [[ "$1" != *"$2"* ]]; }
+
+bin="$work/bin"
+mkdir -p "$bin"
+cat >"$bin/gh" <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "$*" >>"$STUB_DIR/calls.log"
+case "$1 ${2:-}" in
+  "auth status") exit 0 ;;
+  "release view")
+    if [[ ! -e "$STUB_DIR/release-exists" ]]; then
+      echo "release not found" >&2
+      exit 1
+    fi
+    if [[ -e "$STUB_DIR/asset.zip" ]]; then
+      echo "Linger-$3.zip"
+    fi
+    ;;
+  "release create") touch "$STUB_DIR/release-exists" ;;
+  "release upload") cp "$4" "$STUB_DIR/asset.zip" ;;
+  "release download")
+    pattern="" dir=""
+    shift 3
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --pattern) pattern="$2"; shift 2 ;;
+        --dir) dir="$2"; shift 2 ;;
+        *) shift ;;
+      esac
+    done
+    cp "$STUB_DIR/asset.zip" "$dir/$pattern"
+    ;;
+  "repo clone")
+    [[ "$3" == michaelrigart/homebrew-tap ]] || { echo "unexpected clone of $3" >&2; exit 99; }
+    git clone --quiet "$STUB_DIR/tap.git" "$4"
+    ;;
+  *)
+    echo "gh stub: unexpected call: $*" >&2
+    exit 99
+    ;;
+esac
+STUB
+chmod +x "$bin/gh"
+export PATH="$bin:$PATH"
+
+nosec="$work/nosec"
+mkdir -p "$nosec"
+printf '#!/bin/sh\nexit 0\n' >"$nosec/security"
+chmod +x "$nosec/security"
+
+new_scenario() {
+  dir="$work/$1"
+  bare="$dir/origin.git"
+  clone="$dir/clone"
+  export STUB_DIR="$dir/stub"
+  mkdir -p "$STUB_DIR"
+  : >"$STUB_DIR/calls.log"
+
+  git clone --quiet --bare "$root" "$bare"
+  git clone --quiet "$bare" "$clone"
+  git -C "$clone" config user.name "Release Test"
+  git -C "$clone" config user.email "release-test@example.invalid"
+  git -C "$clone" config commit.gpgsign false
+  git -C "$clone" config tag.gpgsign false
+  git -C "$clone" config core.hooksPath /dev/null
+  assert_local_origin
+
+  git -C "$root" ls-files -z -co --exclude-standard |
+    while IFS= read -r -d '' file; do
+      if [[ -e "$root/$file" ]]; then printf '%s\0' "$file"; fi
+    done |
+    tar -C "$root" --null -T - -cf - |
+    tar -C "$clone" -xf -
+  git -C "$clone" add -A
+  git -C "$clone" commit --quiet --allow-empty -m "Snapshot for the test"
+
+  tap_remote
+  export MISE_TRUSTED_CONFIG_PATHS="$clone"
+}
+
+assert_local_origin() {
+  local url
+  url="$(git -C "$clone" remote get-url origin)"
+  if [[ "$url" != "$bare" || "$bare" != /* ]]; then
+    echo "ABORT: origin of $clone is '$url', not the local bare repository $bare" >&2
+    exit 3
+  fi
+}
+
+tap_remote() {
+  local seed="$dir/tap-seed"
+  git init --quiet --bare --initial-branch=main "$STUB_DIR/tap.git"
+  git init --quiet --initial-branch=main "$seed"
+  git -C "$seed" config user.name "Release Test"
+  git -C "$seed" config user.email "release-test@example.invalid"
+  git -C "$seed" config commit.gpgsign false
+  git -C "$seed" config core.hooksPath /dev/null
+  echo tap >"$seed/README.md"
+  git -C "$seed" add README.md
+  git -C "$seed" commit --quiet -m "Start the tap"
+  git -C "$seed" push --quiet "$STUB_DIR/tap.git" main
+}
+
+on_main_with_section() {
+  assert_local_origin
+  git -C "$clone" checkout --quiet -B main
+  (cd "$clone" && scripts/changelog.py release "$1" --repo "$repo")
+  git -C "$clone" commit --quiet -am "Release $1"
+  git -C "$clone" push --quiet --force origin HEAD:main
+}
+
+run_release() {
+  assert_local_origin
+  status=0
+  output="$(cd "$clone" && scripts/release "$@" 2>&1)" || status=$?
+}
+
+refs() { git --git-dir="$bare" for-each-ref --format='%(refname) %(objectname)'; }
+gh_writes() { grep -Ev '^(auth status|release view|release download|repo clone)' "$STUB_DIR/calls.log" || true; }
+tap_cask() { git --git-dir="$STUB_DIR/tap.git" show main:Casks/linger.rb; }
+sha_of() { shasum -a 256 "$1" | cut -d' ' -f1; }
+
+echo "== a: --dry-run builds, verifies and packages, and writes nothing else"
+new_scenario dry
+git -C "$clone" checkout --quiet -b rehearsal
+tags_before="$(git -C "$clone" tag)"
+log_before="$(git -C "$clone" log --all --format=%H)"
+refs_before="$(refs)"
+changelog_before="$(sha_of "$clone/CHANGELOG.md")"
+
+run_release --dry-run
+expect "a: exits 0 from a branch other than main" test "$status" -eq 0
+if [[ "$status" -ne 0 ]]; then echo "$output" >&2; fi
+
+version="$(sed -n 's/^Version: //p' <<<"$output" | head -1)"
+expect "a: prints a YYYYMMDD-HHMM version" test -n "$version" -a "${#version}" -eq 13
+zip="$clone/build/release/Linger-$version.zip"
+expect "a: writes Linger-<version>.zip" test -f "$zip"
+
+unpacked="$dir/unpacked"
+mkdir -p "$unpacked"
+ditto -x -k "$zip" "$unpacked"
+verify_status=0
+verify_output="$("$root/scripts/verify-app" --team "$team" "$unpacked/Linger.app" "$version" 2>&1)" || verify_status=$?
+expect "a: the packaged app passes verify-app --team $team <version>" test "$verify_status" -eq 0
+if [[ "$verify_status" -ne 0 ]]; then echo "$verify_output" >&2; fi
+
+expected_notes="$(
+  cp "$root/CHANGELOG.md" "$dir/CHANGELOG.copy.md"
+  "$root/scripts/changelog.py" release "$version" --repo "$repo" --file "$dir/CHANGELOG.copy.md"
+  "$root/scripts/changelog.py" notes "$version" --file "$dir/CHANGELOG.copy.md"
+)"
+expect "a: prints the changelog section it would commit" contains "$output" "$expected_notes"
+
+cask="$clone/build/release/linger.rb"
+expect "a: renders the cask" test -f "$cask"
+expect "a: the cask has the version" grep -qxF "  version \"$version\"" "$cask"
+expect "a: the cask has the zip's checksum" grep -qxF "  sha256 \"$(sha_of "$zip")\"" "$cask"
+style_dir="$dir/style/Casks"
+mkdir -p "$style_dir"
+cp "$cask" "$style_dir/linger.rb"
+style_status=0
+style_output="$(cd "$style_dir" && brew style "$style_dir/linger.rb" 2>&1)" || style_status=$?
+expect "a: the cask passes brew style" test "$style_status" -eq 0
+if [[ "$style_status" -ne 0 ]]; then echo "$style_output" >&2; fi
+
+expect "a: no new tag" test "$(git -C "$clone" tag)" == "$tags_before"
+expect "a: no new commit" test "$(git -C "$clone" log --all --format=%H)" == "$log_before"
+expect "a: origin is untouched" test "$(refs)" == "$refs_before"
+expect "a: CHANGELOG.md is untouched" test "$(sha_of "$clone/CHANGELOG.md")" == "$changelog_before"
+expect "a: the tree is clean" test -z "$(git -C "$clone" status --porcelain)"
+expect "a: gh is never asked to write" test -z "$(gh_writes)"
+
+echo "== b: checks refuse before anything is built or written"
+new_scenario checks
+v=20260101-0900
+
+expect_refused() {
+  local name="$1" message="$2"
+  expect "$name: refused" test "$status" -ne 0
+  expect "$name: says why" contains "$output" "$message"
+  expect "$name: nothing built" test ! -e "$clone/build"
+  expect "$name: origin untouched" test "$(refs)" == "$refs_before"
+  expect "$name: gh not asked to write" test -z "$(gh_writes)"
+}
+refs_before="$(refs)"
+
+git -C "$clone" checkout --quiet -b elsewhere
+run_release
+expect_refused "b1: a new release off main" "main"
+
+git -C "$clone" checkout --quiet -B main
+echo dirty >>"$clone/README.md"
+run_release
+expect_refused "b2: local changes" "uncommitted"
+git -C "$clone" checkout --quiet -- README.md
+
+git -C "$clone" commit --quiet --allow-empty -m "Not pushed"
+run_release
+expect_refused "b3: main ahead of origin/main" "origin/main"
+git -C "$clone" push --quiet --force origin HEAD:main
+refs_before="$(refs)"
+
+(cd "$clone" && scripts/changelog.py release "$v" --repo "$repo") && git -C "$clone" commit --quiet -am "Release $v"
+git -C "$clone" push --quiet --force origin HEAD:main
+refs_before="$(refs)"
+run_release
+expect_refused "b4: no entries under Unreleased" "Unreleased"
+
+run_release --version 20260202-1000
+expect_refused "b5: a resumed release without a changelog section" "20260202-1000"
+
+git -C "$clone" commit --quiet --allow-empty -m "Local only"
+run_release --version "$v"
+expect_refused "b6: a resumed release on a commit not on origin/main" "origin/main"
+git -C "$clone" reset --quiet --hard origin/main
+
+PATH="$nosec:$PATH" run_release --dry-run --version "$v"
+expect_refused "b7: no signing identity for the team" "$team"
+
+echo "== c: resume safety"
+new_scenario resume
+v=20260101-0900
+on_main_with_section "$v"
+head="$(git -C "$clone" rev-parse HEAD)"
+git -C "$clone" tag "$v" HEAD~1
+git -C "$clone" push --quiet origin "refs/tags/$v"
+refs_before="$(refs)"
+run_release --version "$v"
+expect_refused "c1: the tag points at another commit" "$(git -C "$clone" rev-parse HEAD~1)"
+
+git -C "$clone" tag -f "$v" HEAD >/dev/null
+run_release --version "$v"
+expect_refused "c2: the local tag and origin's tag disagree" "$v"
+
+git -C "$clone" tag -f "$v" HEAD >/dev/null
+git -C "$clone" push --quiet --force origin "refs/tags/$v"
+touch "$STUB_DIR/release-exists"
+printf 'published asset\n' >"$dir/fixture.txt"
+(cd "$dir" && ditto -c -k fixture.txt "$STUB_DIR/asset.zip")
+published="$(sha_of "$STUB_DIR/asset.zip")"
+: >"$STUB_DIR/calls.log"
+run_release --version "$v"
+if [[ "$status" -ne 0 ]]; then echo "$output" >&2; fi
+expect "c3: exits 0" test "$status" -eq 0
+expect "c3: never uploads" lacks "$(cat "$STUB_DIR/calls.log")" "release upload"
+expect "c3: never creates a release" lacks "$(cat "$STUB_DIR/calls.log")" "release create"
+expect "c3: downloads the published asset" contains "$(cat "$STUB_DIR/calls.log")" "release download $v"
+expect "c3: the cask carries the published asset's checksum" contains "$(tap_cask)" "sha256 \"$published\""
+expect "c3: the cask carries the version" contains "$(tap_cask)" "version \"$v\""
+expect "c3: the published asset is unchanged" test "$(sha_of "$STUB_DIR/asset.zip")" == "$published"
+expect "c3: the local build differs from the published asset" test "$(sha_of "$clone/build/release/Linger-$v.zip")" != "$published"
+expect "c3: the tag was not moved" test "$(git --git-dir="$bare" rev-parse "refs/tags/$v^{commit}")" == "$head"
+tap_commits="$(git --git-dir="$STUB_DIR/tap.git" rev-list --count main)"
+: >"$STUB_DIR/calls.log"
+run_release --version "$v"
+expect "c3: running again exits 0" test "$status" -eq 0
+expect "c3: running again leaves the tap alone" test "$(git --git-dir="$STUB_DIR/tap.git" rev-list --count main)" == "$tap_commits"
+
+echo "== d: a new release publishes, then resumes with nothing left to do"
+new_scenario publish
+git -C "$clone" checkout --quiet -B main
+git -C "$clone" push --quiet --force origin HEAD:main
+run_release
+if [[ "$status" -ne 0 ]]; then echo "$output" >&2; fi
+expect "d: exits 0" test "$status" -eq 0
+v="$(git --git-dir="$bare" tag | head -1)"
+expect "d: pushes one tag named like a version" test "$(git --git-dir="$bare" tag | wc -l | tr -d ' ')" -eq 1 -a "${#v}" -eq 13
+expect "d: pushes the release commit to main" test "$(git --git-dir="$bare" log -1 --format=%s main)" == "Release $v"
+expect "d: the tag is the release commit" test "$(git --git-dir="$bare" rev-parse "refs/tags/$v^{commit}")" == "$(git --git-dir="$bare" rev-parse main)"
+calls="$(cat "$STUB_DIR/calls.log")"
+expect "d: creates the release" contains "$calls" "release create $v"
+expect "d: uploads the zip" contains "$calls" "release upload $v"
+expect "d: the uploaded asset is the built zip" test "$(sha_of "$STUB_DIR/asset.zip")" == "$(sha_of "$clone/build/release/Linger-$v.zip")"
+expect "d: the cask carries the asset's checksum" contains "$(tap_cask)" "sha256 \"$(sha_of "$STUB_DIR/asset.zip")\""
+expect "d: the tap commit is 'linger <version>'" test "$(git --git-dir="$STUB_DIR/tap.git" log -1 --format=%s main)" == "linger $v"
+
+tap_commits="$(git --git-dir="$STUB_DIR/tap.git" rev-list --count main)"
+refs_before="$(refs)"
+: >"$STUB_DIR/calls.log"
+run_release --version "$v"
+if [[ "$status" -ne 0 ]]; then echo "$output" >&2; fi
+expect "d: resuming a finished release exits 0" test "$status" -eq 0
+expect "d: resuming creates and uploads nothing" test -z "$(gh_writes)"
+expect "d: resuming adds no tap commit" test "$(git --git-dir="$STUB_DIR/tap.git" rev-list --count main)" == "$tap_commits"
+expect "d: resuming changes nothing on origin" test "$(refs)" == "$refs_before"
+
+if [[ $failures -ne 0 ]]; then
+  echo "$failures of $cases cases failed" >&2
+  exit 1
+fi
+echo "$cases of $cases cases passed"
