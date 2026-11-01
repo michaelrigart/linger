@@ -11,15 +11,15 @@ locked screen (see Constraints).
 
 ## Why
 
-Michael uses Jiggler (Stick Software) in Zen Jiggle mode so that Microsoft Teams keeps
-showing them as Available when they step away from the keyboard.
+Michael uses Jiggler (Stick Software) in Zen Jiggle mode so that the chat app they use for
+work keeps showing them as available when they step away from the keyboard.
 
 Two problems:
 
 1. **It breaks Auto appearance.** macOS (WindowServer) performs the scheduled light/dark
    switch only while the user is idle, and Jiggler makes sure the user never looks
-   idle. Teams' away detection and the appearance switch read the same "is the user
-   idle?" signal, so any tool that keeps Teams green blocks the switch unless it
+   idle. The chat app's away detection and the appearance switch read the same "is the
+   user idle?" signal, so any tool that keeps the status green blocks the switch unless it
    deliberately makes room for it. The evidence is below.
 2. **It looks dated.**
 
@@ -57,10 +57,10 @@ and `pmset -g log`:
   Best estimate: macOS switches at a sun altitude near −3° on both sides. Michael's exact
   location is unknown, so this is accurate to a few minutes.
 
-### Keeping Teams green
+### Keeping the presence status green
 
-- **Teams reads `CGEventSourceSecondsSinceLastEventType`.** Both its main binary
-  (`MSTeams`) and its embedded Edge engine call it. The binary doesn't show which event
+- **The chat app reads `CGEventSourceSecondsSinceLastEventType`.** Both its main binary
+  and its embedded browser engine call it. The binary doesn't show which event
   source state it passes.
 - **How Jiggler does it.** Jiggler's binary imports `CGEventCreateMouseEvent`,
   `CGEventPost`, `UpdateSystemActivity`, `AXIsProcessTrusted` and
@@ -77,7 +77,7 @@ and `pmset -g log`:
   | `CGEventPost` of a null event (HID or session tap) | reset | **not reset** | Accessibility |
   | `CGEventPost` of a zero-distance `mouseMoved` | reset | reset | Accessibility |
 
-  Only the mouse event resets every timer Teams could be reading, so Linger uses it.
+  Only the mouse event resets every timer the chat app could be reading, so Linger uses it.
   Unlike a null event, a mouse event carries a position.
   The probe ran unsandboxed, from a terminal that already had the permission. Sandboxed
   behaviour is feasibility check 1.
@@ -85,7 +85,7 @@ and `pmset -g log`:
 ## Success
 
 - Runs from login all week without attention.
-- Teams stays Available while Michael is away from the keyboard, apart from the
+- The chat app keeps showing Michael as available while he is away from the keyboard, apart from the
   light/dark gap described below.
 - With Appearance set to Auto, the Mac goes Dark in the evening and Light in the morning
   once Michael steps away, without touching System Settings.
@@ -109,8 +109,8 @@ and `pmset -g log`:
   accurate to minutes in Belgium, but not in wide time zones, so it must be added before
   an App Store release.
 - The App Store submission itself: listing, screenshots, review, formal name clearance.
-- Per-app rules (for example, only while Teams runs) and any Teams or Microsoft Graph
-  integration. Linger cannot see Teams' status and does not try to.
+- Per-app rules (for example, only while the chat app runs) and any integration with a
+  chat service. Linger cannot see the chat app's status and does not try to.
 - Keeping the Mac awake with the lid closed, or battery-specific behaviour.
 - Localisation. English only.
 
@@ -181,7 +181,7 @@ Linger has failed, even if it works, if it:
   movement is undone once. No bound on the distance is claimed. **Michael accepted this
   residual race (2026-10-31)** and will judge in use whether it bothers them; Jiggler
   behaves the same way.
-- **Teams' away timeout bounds the timings.** Teams marks a user Away after about
+- **The chat app's away timeout bounds the timings.** It marks a user away after about
   5 minutes of inactivity. The idle delay, plus the polling interval and timer tolerance,
   must stay below that, which is why the longest idle delay is 3 minutes. The same bound
   applies to the gap between two events.
@@ -246,8 +246,8 @@ Linger has failed, even if it works, if it:
   the next one, until the switch happens or the next dusk or dawn takes over.
 - If the user is at the keyboard when a switch becomes due, nothing happens until they
   step away. macOS behaves the same way without Linger.
-- Teams may show Away during the gap. **Michael accepted this, up to the gap budget.**
-- If the Mac locks during a gap (on Macs that lock from idleness), Linger stops as it always does while the screen is locked. Teams shows Away
+- The chat app may show Michael as away during the gap. **Michael accepted this, up to the gap budget.**
+- If the Mac locks during a gap (on Macs that lock from idleness), Linger stops as it always does while the screen is locked. The chat app shows them as away
   until the user returns.
 - Sun altitude is recomputed on day change, wake, and time-zone or clock changes. If the
   sun never crosses a threshold that day (polar regions), Linger doesn't step aside.
@@ -284,8 +284,8 @@ document. Its visual direction is the reference: a compact, Control Center–sty
 - **Light/dark row** shows the approximate time Linger will next step aside. It is
   hidden when handling is off. When Appearance isn't Auto, it shows a one-line hint
   pointing to System Settings instead.
-- Copy never claims to know Teams' status. The mockup's "Teams stays Available" becomes
-  neutral wording.
+- Copy never claims to know the chat app's status. The mockup's wording about staying
+  available becomes neutral.
 - **Icon:** a monochrome template image with three states: active (filled), off, paused
   or missing permission (outline), and stepping aside (half). The mockup glyph is a
   placeholder; the final artwork is the builder's call within this brief.
@@ -336,7 +336,7 @@ to check. It logs no personal data.
   - A post is skipped when the idle time re-read just before posting shows the user
     has come back.
 - Manual acceptance on Michael's Mac:
-  - Teams stays Available after 15 minutes away.
+  - The chat app keeps showing Michael as available after 15 minutes away.
   - After dusk, stepping away switches the Mac to Dark, and after dawn to Light. Evidence
     comes from WindowServer's log:
     `/usr/bin/log show --start "<YYYY-MM-DD HH:MM:SS>" --style compact --predicate 'process == "WindowServer" AND (eventMessage CONTAINS "user_is_idle_for_appearance_switch" OR eventMessage CONTAINS "set_appearance_theme")'`.
@@ -353,8 +353,8 @@ to check. It logs no personal data.
 - **The plan's first task is a feasibility check** in a sandboxed build, before any UI
   work:
   1. A sandboxed app can obtain post-event access with `CGRequestPostEventAccess`. Its
-     zero-distance event then resets `.combinedSessionState` idle time, and Teams stays
-     Available for at least 10 minutes away. A debug build with an artificial delay
+     zero-distance event then resets `.combinedSessionState` idle time, and the chat app keeps
+     showing Michael as available for at least 10 minutes away. A debug build with an artificial delay
      between reading the position and posting shows the worst case of the accepted
      race to Michael. Without the delay, posting once a second while the mouse rests
      shows no cursor movement.
@@ -377,7 +377,7 @@ reason to replace XcodeGen.
 ## Decisions
 
 **Michael decided:**
-- Keeping Teams Available is the purpose. Linger is always on.
+- Keeping the chat app's status available is the purpose. Linger is always on.
 - A short Away gap around each light/dark switch is acceptable, up to 15 minutes by
   default and configurable.
 - Panel design B.
@@ -401,7 +401,7 @@ reason to replace XcodeGen.
 - Thresholds of −5° in the evening and −1° in the morning.
 - No retry within the same absence.
 - "Today" pauses until midnight.
-- Default idle delay of 1 minute, with choices capped at 3 minutes to stay under Teams'
-  away timeout.
+- Default idle delay of 1 minute, with choices capped at 3 minutes to stay under the chat
+  app's away timeout.
 - Launch at login on by default.
 - English only.
