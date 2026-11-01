@@ -78,11 +78,14 @@ step idempotent; CI runs the tests, an ad hoc build and the verifier.
 - Produces: build settings `MARKETING_VERSION` (default `dev`) and
   `CURRENT_PROJECT_VERSION` (default `0`) feeding the Info.plist.
 
-- [ ] **Step 1: Write the failing verifier test** `scripts/tests/test-verify-app <app>`:
-  copies the app to a temp dir and asserts (a) `verify-app <copy>` passes; (b) after
-  re-signing the copy ad hoc with an extra entitlement
-  `com.apple.security.network.client` it fails; (c) `verify-app <copy> 20261101-1430`
-  fails on a `dev` build; (d) `verify-app --team CX4MWR5579 <copy>` fails on an ad hoc copy.
+- [ ] **Step 1: Write the failing verifier test** `scripts/tests/test-verify-app <app>`.
+  Every case starts from a fresh copy of the app in its own temp dir, and every negative
+  case first asserts that `verify-app <copy>` passes on that copy, so each case fails for
+  exactly one reason: (a) `verify-app <copy>` passes; (b) after re-signing the copy ad hoc
+  with the sandbox entitlement plus `com.apple.security.network.client`, it fails;
+  (c) `verify-app <copy> 20261101-1430` fails on a `dev` build; (d) after re-signing the
+  copy ad hoc with exactly `Linger/Linger.entitlements`, `verify-app <copy>` passes and
+  `verify-app --team CX4MWR5579 <copy>` fails.
 - [ ] **Step 2: Run it against the current build; expect failure** (`verify-app` missing).
 - [ ] **Step 3: Implement `scripts/verify-app`** (Bash; `codesign`, `plutil`,
   `/usr/libexec/PlistBuddy`; `set -euo pipefail`).
@@ -158,7 +161,8 @@ step idempotent; CI runs the tests, an ad hoc build and the verifier.
 
 ### Task 3: Design sources and the render script
 
-**Depends on:** none
+**Depends on:** Task 1 (both edit `AGENTS.md`, and Task 1's build reads the asset catalog
+this task rewrites)
 
 **Files:**
 - Create: `design/app-icon.svg`, `design/mark.svg`, `design/mark-on-light.svg`
@@ -219,7 +223,7 @@ step idempotent; CI runs the tests, an ad hoc build and the verifier.
 
 ### Task 5: Release script, cask and install docs
 
-**Depends on:** Task 1, Task 2
+**Depends on:** Task 1, Task 2, Task 3 (`AGENTS.md`, and its build reads the asset catalog)
 
 **Files:**
 - Create: `scripts/release`
@@ -260,19 +264,22 @@ step idempotent; CI runs the tests, an ad hoc build and the verifier.
   `gh release upload` only if the asset is missing; `gh release download` the asset into
   a temp dir and `shasum -a 256` it; clone the tap with `gh repo clone` into a temp dir,
   render the template, skip if unchanged, else commit `linger <version>` and push.
-- [ ] **Step 4: Resume-safety test** (extend the test file, same local `origin` and
-  stubbed `gh`, including the tap clone): with the stub that reports an existing release *with* the asset, `--version <v>` must hash
-  the downloaded asset (the stub serves a fixture zip) and never upload; with the tag
-  pointing at a different commit than `HEAD`, the script must stop before building.
+- [ ] **Step 4: Resume-safety test** (extend the test file, same kind of local `origin`
+  and stubbed `gh`, including the tap clone; each scenario gets its own fresh temp clone,
+  bare origin and stub state): with the stub that reports an existing release *with* the
+  asset, `--version <v>` must hash the downloaded asset (the stub serves a fixture zip)
+  and never upload; with the tag pointing at a different commit than `HEAD`, the script
+  must stop before building.
 - [ ] **Step 5: Run the tests; expect pass.**
 - [ ] **Step 6: Docs.** README: a new "Install" section before "Build and install"
   (`brew install --cask michaelrigart/tap/linger`; remove any manually copied
   `/Applications/Linger.app` first; "Open Anyway" once after the first install; grant
-  Accessibility once; upgrades keep both); the build-from-source section notes the
+  Accessibility once; upgrades should keep both, per the spec); the build-from-source section notes the
   `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` override and that ad hoc builds need the
   Accessibility grant again after each rebuild. AGENTS.md: `scripts/release` (Michael
-  runs it; agents only with his go-ahead, since it pushes to `main`), and "user-visible
-  changes add a `CHANGELOG.md` entry under `Unreleased`".
+  runs it; agents only with his go-ahead, since it pushes to `main`); "user-visible
+  changes add a `CHANGELOG.md` entry under `Unreleased`"; and CI builds ad hoc with the
+  override, so release signing happens only on Michael's Mac.
 - [ ] **Step 7: Commit** `Add the release script and the Homebrew cask template`.
 
 ### Task 6: Acceptance before merge
