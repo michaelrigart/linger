@@ -16,7 +16,8 @@ happens.
 While you're away, Linger posts a mouse event that doesn't move the pointer, once a minute.
 macOS treats you as idle after about 60 seconds without input, so its light/dark switch
 still fits between two of Linger's events. If the switch still hasn't happened a little
-after it was due, Linger pauses for up to 15 minutes (configurable) to make room for it.
+after it was due, Linger steps aside (stops posting) for up to 15 minutes (configurable)
+to make room for it.
 
 ## Features
 
@@ -37,10 +38,12 @@ after it was due, Linger pauses for up to 15 minutes (configurable) to make room
 
 ## Build and install
 
-There are no signed releases yet, so build it yourself. `xcodebuild` needs the full Xcode
-selected, not the Command Line Tools (check with `xcode-select -p`).
+There are no signed releases yet, so build it yourself. The build needs the full Xcode. If
+`xcode-select -p` points at the Command Line Tools, prefix the `xcodebuild` and `swift`
+commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
 
 ```sh
+mise trust mise.toml
 mise exec -- xcodegen generate
 xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build -quiet build
 ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
@@ -50,13 +53,19 @@ open /Applications/Linger.app
 Then click **Allow…** in Linger's menu and switch Linger on in the Accessibility list
 that opens (System Settings → Privacy & Security → Accessibility).
 
-Builds are signed ad hoc, so macOS treats each new build as a different app, and the old
-build's entry stays in the list without working. After installing a new build, reset the
-entry and grant access again:
+To upgrade, quit Linger first, so that `open` starts the new build instead of bringing
+the old one forward, and replace the app rather than copying over it:
 
 ```sh
+rm -rf /Applications/Linger.app
+ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
 tccutil reset All com.michaelrigart.linger
+open /Applications/Linger.app
 ```
+
+Builds are signed ad hoc, so macOS treats each new build as a different app, and the old
+build's Accessibility entry stays in the list without working. The `tccutil` line clears
+it; then click **Allow…** and switch Linger on again.
 
 ## Tests
 
@@ -66,6 +75,12 @@ swift test --package-path Packages/LingerCore
 
 ## Limitations
 
+- If you start moving the mouse at the very moment Linger posts, the pointer can jump back
+  to where it was, once.
+- The dusk and dawn timing uses your time zone's reference location. In wide time zones,
+  far from that location, it can be off by enough that Linger steps aside while macOS
+  isn't ready to switch yet. You may then show as away for up to the step-aside limit for
+  nothing; macOS still switches later, between Linger's events.
 - macOS has no documented way to ask whether the screen is locked. Linger reads two
   undocumented signals and treats the screen as locked if either says so, and a future
   macOS release could change them.

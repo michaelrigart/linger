@@ -25,7 +25,7 @@ already points at Xcode.
 - The Accessibility (post-event) grant is tied to the code signature. Builds are ad-hoc
   signed, so every rebuild needs the grant given again. The old build's entry stays in
   the Accessibility list, and macOS won't prompt again while it exists. Clear it with
-  `tccutil reset PostEvent com.michaelrigart.linger` (Michael runs this), or remove and
+  `tccutil reset All com.michaelrigart.linger` (Michael runs this), or remove and
   re-add Linger in the list.
 - Check access with `AXIsProcessTrusted()` only. `CGPreflightPostEventAccess()` caches its
   answer for the life of the process, so it misses a grant or a revocation while Linger
