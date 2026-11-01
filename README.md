@@ -2,9 +2,9 @@
 
 # Linger
 
-Linger is a macOS menu bar app that keeps you showing as available in presence apps such
-as Microsoft Teams while you're away from the keyboard, without stopping macOS from
-switching between light and dark appearance.
+Linger is a macOS menu bar app that keeps your Mac active while you're away from the
+keyboard, so you keep showing as available, without stopping macOS from switching between
+light and dark appearance.
 
 ## Why
 
