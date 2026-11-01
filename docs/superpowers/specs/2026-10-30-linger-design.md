@@ -204,8 +204,10 @@ Linger has failed, even if it works, if it:
 - While access is missing:
   - The status line reads "Needs permission to keep you active".
   - The on/off switch is disabled.
-  - An **Allow…** button calls `CGRequestPostEventAccess()`, which shows the system
-    prompt or the Accessibility pane.
+  - An **Allow…** button calls `CGRequestPostEventAccess()` and, while access is still
+    missing, opens the Accessibility pane in System Settings. macOS shows its own prompt
+    only while it has no entry for the app. Once an entry exists, including one left by a
+    build with a different signature, the request alone shows nothing.
   - The menu bar icon shows the off state.
 - Linger notices a grant without being relaunched. It re-checks on each poll tick
   until access arrives. If access is revoked later, it returns to the missing state.

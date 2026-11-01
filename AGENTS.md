@@ -23,7 +23,10 @@ Command Line Tools.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.
 - The Accessibility (post-event) grant is tied to the code signature. Builds are ad-hoc
-  signed, so every rebuild needs the grant given again.
+  signed, so every rebuild needs the grant given again. The old build's entry stays in
+  the Accessibility list, and macOS won't prompt again while it exists. Clear it with
+  `tccutil reset PostEvent com.michaelrigart.linger` (Michael runs this), or remove and
+  re-add Linger in the list.
 - A bare `log` is a zsh builtin. Use `/usr/bin/log`.
 - Engine and probe events are logged at notice level, which is persisted, so
   `/usr/bin/log show` reads them without `--info`. Info-level lines are not persisted:
