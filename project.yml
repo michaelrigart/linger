@@ -33,8 +33,10 @@ targets:
         CODE_SIGN_STYLE: Manual
         CURRENT_PROJECT_VERSION: "0"
         DEVELOPMENT_TEAM: CX4MWR5579
+        ENABLE_DEBUG_DYLIB: NO
         ENABLE_HARDENED_RUNTIME: YES
         MARKETING_VERSION: dev
+        OTHER_CODE_SIGN_FLAGS: "--options=runtime"
         SWIFT_VERSION: "6.0"
       configs:
         Release:
