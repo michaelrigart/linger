@@ -164,7 +164,7 @@ app="$root/build/Build/Products/Release/Linger.app"
 rm -rf "$app"
 xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release \
   -derivedDataPath build -quiet \
-  MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="${version//-/}" ARCHS=arm64 build
+  MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="${version//-/}" build
 
 # 5. Verify
 scripts/verify-app --team "$team" "$app" "$version"

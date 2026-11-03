@@ -70,26 +70,22 @@ Add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to `xcodebuild` to sign ad hoc inst
 mise trust mise.toml
 mise exec -- xcodegen generate
 xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
+rm -rf /Applications/Linger.app
 ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
 open /Applications/Linger.app
 ```
+
+Remove the old app first: `ditto` merges into an existing bundle and would keep stale
+files. Quit Linger before you replace it, so that `open` starts the new build instead of
+bringing the old one forward.
 
 Then click **Allow…** in Linger's menu and switch Linger on in the Accessibility list
 that opens (System Settings → Privacy & Security → Accessibility).
 
-To upgrade, quit Linger first, so that `open` starts the new build instead of bringing
-the old one forward, and replace the app rather than copying over it:
-
-```sh
-rm -rf /Applications/Linger.app
-ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
-tccutil reset All com.michaelrigart.linger
-open /Applications/Linger.app
-```
-
 An ad hoc build is a different app to macOS every time you rebuild it, so you need to give
 the Accessibility permission again, and the old build's entry stays in the list without
-working. The `tccutil` line clears it; then click **Allow…** and switch Linger on again.
+working. Run `tccutil reset All com.michaelrigart.linger` to clear it; then click **Allow…**
+and switch Linger on again.
 
 ## Releasing
 

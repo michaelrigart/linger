@@ -14,13 +14,16 @@ already points at Xcode.
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
 - Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
-- Release build (the only kind `scripts/verify-app` accepts): `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build -quiet build`.
+- Release build (the only kind `scripts/verify-app` accepts): the same with `-configuration Release`.
   Debug builds carry `get-task-allow` and always fail the verifier's exact-entitlements check.
-- Release build without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to the Release build command
-- Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; its test is
-  `scripts/tests/test-verify-app <Linger.app>`. Both take a Release build, and the test needs
-  one made with the default version
-- Changelog tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'`
+- Without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to either build
+- Install: `rm -rf /Applications/Linger.app && ditto build/Build/Products/Debug/Linger.app /Applications/Linger.app`
+  (`ditto` merges into an existing bundle and would keep stale files)
+- Run: `open /Applications/Linger.app`
+- Script tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'` (the changelog tool),
+  `scripts/tests/test-release-dry-run` and `scripts/tests/test-verify-app <Linger.app>`, which takes a
+  Release build made with the default version
+- Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; it accepts only Release builds
 - Release: `scripts/release [--dry-run] [--version <YYYYMMDD-HHMM>]`. Michael runs it; an agent
   only with his go-ahead, since it pushes to `main`, tags, creates a GitHub release and pushes
   to the Homebrew tap. `--dry-run` builds, verifies and packages into `build/release/` and
