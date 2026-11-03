@@ -34,7 +34,7 @@ to make room for it.
 ## Requirements
 
 - macOS 26 or later, on Apple silicon.
-- To build: Xcode 26 or later, and [mise](https://mise.jdx.dev) for XcodeGen.
+- To build: Xcode 27 or later, and [mise](https://mise.jdx.dev) for XcodeGen.
 
 ## Install
 

@@ -14,16 +14,21 @@ already points at Xcode.
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
 - Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
-- Release build (the only kind `scripts/verify-app` accepts): the same with `-configuration Release`.
-  Debug builds carry `get-task-allow` and always fail the verifier's exact-entitlements check.
-- Without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to either build
+- Release build: the same with `-configuration Release`; `scripts/verify-app` accepts only
+  Release builds.
+- Without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to
+  either build.
 - Install: `rm -rf /Applications/Linger.app && ditto build/Build/Products/Debug/Linger.app /Applications/Linger.app`
   (`ditto` merges into an existing bundle and would keep stale files)
 - Run: `open /Applications/Linger.app`
-- Script tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'` (the changelog tool),
-  `scripts/tests/test-release-dry-run` and `scripts/tests/test-verify-app <Linger.app>`, which takes a
-  Release build made with the default version
-- Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`; it accepts only Release builds
+- Script tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'` (the
+  changelog tool), `scripts/tests/test-release-dry-run` and
+  `scripts/tests/test-verify-app <Release Linger.app>` (a Release build made with the default
+  version)
+- Verify a built app: `scripts/verify-app [--team <ID>] <Linger.app> [<version>]`. It fails on a
+  bad signature, entitlements other than exactly `com.apple.security.app-sandbox`, `LSUIElement`
+  not true, a wrong bundle identifier or version, or (with `--team`) a different
+  `TeamIdentifier`.
 - Release: `scripts/release [--dry-run] [--version <YYYYMMDD-HHMM>]`. Michael runs it; an agent
   only with his go-ahead, since it pushes to `main`, tags, creates a GitHub release and pushes
   to the Homebrew tap. `--dry-run` builds, verifies and packages into `build/release/` and
