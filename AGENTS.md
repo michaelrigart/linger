@@ -50,9 +50,10 @@ already points at Xcode.
 - `LingerCore` must not import AppKit or SwiftUI. Platform code lives in the app target.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.
-- Every `xcodebuild -derivedDataPath` ends in `.noindex`: Spotlight skips those folders, so
-  builds never show up in Spotlight or Alfred. The default is `build/dd.noindex`; a parallel
-  or scratch build uses `build/dd-<name>.noindex`.
+- Every `xcodebuild` run that compiles (`build`, `test`, `archive` and the like) passes a
+  `-derivedDataPath` that ends in `.noindex`: Spotlight skips those folders, so builds never
+  show up in Spotlight or Alfred. The default is `build/dd.noindex`; a parallel or scratch
+  build uses `build/dd-<name>.noindex`.
 - The Accessibility (post-event) grant is tied to the code signature. Builds are signed
   with Michael's Personal Team (manual signing, no provisioning profile), whose designated
   requirement names the certificate, so the grant survives rebuilds. Ad hoc builds
