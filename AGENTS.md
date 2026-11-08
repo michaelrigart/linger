@@ -13,12 +13,12 @@ already points at Xcode.
 
 - Core tests: `swift test --package-path Packages/LingerCore`
 - Generate the project: `mise exec -- xcodegen generate` (`Linger.xcodeproj` is not tracked)
-- Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build -quiet build`
+- Build: `xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Debug -derivedDataPath build/dd.noindex -quiet build`
 - Release build: the same with `-configuration Release`; `scripts/verify-app` accepts only
   Release builds.
 - Without the signing certificate (ad hoc): add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to
   either build.
-- Install: `rm -rf /Applications/Linger.app && ditto build/Build/Products/Debug/Linger.app /Applications/Linger.app`
+- Install: `rm -rf /Applications/Linger.app && ditto build/dd.noindex/Build/Products/Debug/Linger.app /Applications/Linger.app`
   (`ditto` merges into an existing bundle and would keep stale files)
 - Run: `open /Applications/Linger.app`
 - Script tests: `/usr/bin/python3 -m unittest discover -s scripts/tests -p 'test_*.py'` (the
@@ -39,7 +39,7 @@ already points at Xcode.
 - CI builds ad hoc with the override above, so release signing happens only on Michael's Mac
 - Artwork sources live in `design/`; `design/render` regenerates every PNG in the asset catalog from
   them. It needs `rsvg-convert` (Homebrew `librsvg`, not in the maintainer's Brewfile)
-- Probe (Debug builds only): `build/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
+- Probe (Debug builds only): `build/dd.noindex/Build/Products/Debug/Linger.app/Contents/MacOS/Linger -LingerProbe YES -LingerProbeInterval 1 -LingerProbeSeconds 6`,
   then read it with `/usr/bin/log show --last 2m --style compact --predicate 'subsystem == "com.michaelrigart.linger"'`
 
 ## Rules an agent gets wrong
@@ -50,6 +50,9 @@ already points at Xcode.
 - `LingerCore` must not import AppKit or SwiftUI. Platform code lives in the app target.
 - Linger posts only the zero-distance `mouseMoved` event at the cursor's current position.
   No keyboard, click or scroll events. See the spec's Anti-goals before adding anything.
+- Every `xcodebuild -derivedDataPath` ends in `.noindex`: Spotlight skips those folders, so
+  builds never show up in Spotlight or Alfred. The default is `build/dd.noindex`; a parallel
+  or scratch build uses `build/dd-<name>.noindex`.
 - The Accessibility (post-event) grant is tied to the code signature. Builds are signed
   with Michael's Personal Team (manual signing, no provisioning profile), whose designated
   requirement names the certificate, so the grant survives rebuilds. Ad hoc builds

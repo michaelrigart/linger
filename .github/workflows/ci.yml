@@ -28,8 +28,8 @@ jobs:
       - name: Generate the project
         run: mise exec -- xcodegen generate
       - name: Build Release, signed ad hoc
-        run: xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
+        run: xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build/dd.noindex CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
       - name: Verify the app
-        run: scripts/verify-app build/Build/Products/Release/Linger.app
+        run: scripts/verify-app build/dd.noindex/Build/Products/Release/Linger.app
       - name: Test the verifier
-        run: scripts/tests/test-verify-app build/Build/Products/Release/Linger.app
+        run: scripts/tests/test-verify-app build/dd.noindex/Build/Products/Release/Linger.app
