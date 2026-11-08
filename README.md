@@ -69,9 +69,9 @@ Add `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` to `xcodebuild` to sign ad hoc inst
 ```sh
 mise trust mise.toml
 mise exec -- xcodegen generate
-xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
+xcodebuild -project Linger.xcodeproj -scheme Linger -configuration Release -derivedDataPath build/dd.noindex CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= -quiet build
 rm -rf /Applications/Linger.app
-ditto build/Build/Products/Release/Linger.app /Applications/Linger.app
+ditto build/dd.noindex/Build/Products/Release/Linger.app /Applications/Linger.app
 open /Applications/Linger.app
 ```
 
