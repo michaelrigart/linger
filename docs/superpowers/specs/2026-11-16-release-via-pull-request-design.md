@@ -91,8 +91,9 @@ As in the canonical design, adapted to Linger's files:
 - Branch `fix/release-via-pr`, with a pull request of its own.
 - The port starts from Muninn's commit once its `scripts/release` and test have passed Codex's
   pre-merge review. The plan pins that commit.
-- Cross-repository: all four pull requests (Muninn, Hulder, Linger, Tafl) are opened before any is
-  merged, and Muninn's is merged first.
+- Cross-repository: all five pull requests (Muninn, Hulder, Linger, Tafl, Skald) are opened before
+  any is merged, and Muninn's is merged first. Skald was added by the maintainer on 2026-11-16
+  (canonical design, "Ports", at Muninn `a539742`).
 
 ## Acceptance
 
