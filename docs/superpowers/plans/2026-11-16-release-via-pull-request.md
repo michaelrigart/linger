@@ -18,13 +18,12 @@ cases are removed from the test. The docs gain the canonical release flow.
 canonical design: Muninn's
 [`docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md`](https://github.com/michaelrigart/muninn/blob/main/docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md).
 
-**Source:** Muninn's branch `fix/release-via-pr` in `~/Code/Netronix/muninn-fix-release-via-pr`,
-at the commit `muninn-fix-release-via-pr-71` reports as having passed Codex's pre-merge review:
-`<SOURCE>`. Execution does not start until this line names that commit; the pin lands in its own
-plan commit.
-
 ## Global Constraints
 
+- **Source:** Muninn's branch `fix/release-via-pr` in `~/Code/Netronix/muninn-fix-release-via-pr`,
+  at the commit that passed Codex's pre-merge review there: `<SOURCE>`. Every `<SOURCE>` in the
+  tasks means this commit. Execution does not start until this line names it in full (40
+  characters); the pin lands in its own plan commit.
 - The rename is exactly this `sed`, in this order, applied to both files:
   `sed -e 's/muninn/linger/g' -e 's/Muninn/Linger/g' -e 's/Linger records calls/Linger keeps your Mac active/g'`.
   If the source test no longer contains "Muninn records calls", stop and report: the spec names
@@ -84,7 +83,9 @@ helper the shared script needs: stop and report it, with the diff, so the plan c
 
 - [ ] **Step 3: Port the test first**
 
-Write `scripts/tests/test-release-dry-run` from the source's file through the Global Constraints
+Write `scripts/tests/test-release-dry-run` from
+`git -C ~/Code/Netronix/muninn-fix-release-via-pr show <SOURCE>:scripts/tests/test-release-dry-run`
+(never the checkout's working tree, which may have moved on) through the Global Constraints
 `sed`, then delete `zap_is_settings_only` and every line that exists only for its four "a:" cases.
 Keep the file executable.
 
@@ -97,12 +98,14 @@ task report.
 
 - [ ] **Step 5: Port the script**
 
-Write `scripts/release` from the source's file through the same `sed`. Keep it executable.
+Write `scripts/release` from
+`git -C ~/Code/Netronix/muninn-fix-release-via-pr show <SOURCE>:scripts/release` through the same
+`sed`. Keep it executable.
 
 - [ ] **Step 6: Check the port is the source, renamed**
 
-Run, with `$SRC` the source checkout at `<SOURCE>` and each source file passed through the same
-`sed` into `$TMPDIR`:
+Run, with each source file taken by `git show <SOURCE>:<path>` as in Steps 3 and 5 and passed
+through the same `sed` into `$TMPDIR`:
 `diff "$TMPDIR/release" scripts/release` and `diff "$TMPDIR/test-release-dry-run" scripts/tests/test-release-dry-run`,
 then `rg -i muninn scripts/release scripts/tests/test-release-dry-run`.
 Expected: the script diff is empty; the test diff is only deleted lines, all of them the zap
@@ -188,7 +191,8 @@ Expected: both exit 0.
 In a scratch clone `$TMPDIR/linger-dry-run` of this branch, with `origin` set to
 `git@github.com:michaelrigart/linger.git` and `mise trust` run in it, commit one `### Fixed`
 entry under `## [Unreleased]`, then run `scripts/release --dry-run`.
-Expected: exit 0; a note that the token cannot merge (Review Focus 3); last line
+Expected: exit 0; a note that `gh`'s token cannot merge, not a refusal (an agent shell's
+`GH_TOKEN` has no scopes `gh` can read); last line
 "Dry run: nothing committed, branched, pushed, merged, tagged or published."; afterwards
 `git ls-remote origin 'refs/heads/release/*'` prints nothing, `gh pr list --repo michaelrigart/linger --state all --head release/<version>`
 prints nothing, and the clone's HEAD and branch are unchanged. The clone's removal goes in the
