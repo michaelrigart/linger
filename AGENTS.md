@@ -35,10 +35,10 @@ already points at Xcode.
   `main`), tags, creates a GitHub release and pushes to the Homebrew tap. It needs a `gh` login
   that can merge as admin. `--dry-run` builds, verifies and packages into `build/release/` and
   prints the changelog section; it creates nothing: no branch, commit, pull request, tag or
-  release. `--version` resumes an earlier
-  run. Its test, `scripts/tests/test-release-dry-run`, runs the script in temporary clones whose
-  `origin` is a local bare repository, with a stub `gh`, so it never reaches GitHub. It builds
-  and signs, so it needs the certificate and runs on Michael's Mac, not in CI
+  release. `--version` resumes an earlier run. Its test, `scripts/tests/test-release-dry-run`, runs
+  the script in temporary clones whose `origin` is a local bare repository, with a stub `gh`, so it
+  never reaches GitHub. It builds and signs, so it needs the certificate and runs on Michael's Mac,
+  not in CI
 - CI builds ad hoc with the override above, so release signing happens only on Michael's Mac
 - Artwork sources live in `design/`; `design/render` regenerates every PNG in the asset catalog from
   them. It needs `rsvg-convert` (Homebrew `librsvg`, not in the maintainer's Brewfile)
