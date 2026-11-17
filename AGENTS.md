@@ -1,6 +1,7 @@
 # Linger
 
 Design and behaviour: `docs/superpowers/specs/2026-10-30-linger-design.md`.
+Release flow: `docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md`.
 Design-record rules (specs, plans, status, commits) are in the global agent instructions.
 
 ## Commands
@@ -30,12 +31,14 @@ already points at Xcode.
   not true, a wrong bundle identifier or version, or (with `--team`) a different
   `TeamIdentifier`.
 - Release: `scripts/release [--dry-run] [--version <YYYYMMDD-HHMM>]`. Michael runs it; an agent
-  only with his go-ahead, since it pushes to `main`, tags, creates a GitHub release and pushes
-  to the Homebrew tap. `--dry-run` builds, verifies and packages into `build/release/` and
-  prints the changelog section; it commits and pushes nothing. `--version` resumes an earlier
-  run. Its test, `scripts/tests/test-release-dry-run`, runs the script in temporary clones whose
-  `origin` is a local bare repository, with a stub `gh`, so it never reaches GitHub. It builds
-  and signs, so it needs the certificate and runs on Michael's Mac, not in CI
+  only with his go-ahead, since it pushes a release branch and merges its pull request (never
+  `main`), tags, creates a GitHub release and pushes to the Homebrew tap. It needs a `gh` login
+  that can merge as admin. `--dry-run` builds, verifies and packages into `build/release/` and
+  prints the changelog section; it creates nothing: no branch, commit, pull request, tag or
+  release. `--version` resumes an earlier run. Its test, `scripts/tests/test-release-dry-run`, runs
+  the script in temporary clones whose `origin` is a local bare repository, with a stub `gh`, so it
+  never reaches GitHub. It builds and signs, so it needs the certificate and runs on Michael's Mac,
+  not in CI
 - CI builds ad hoc with the override above, so release signing happens only on Michael's Mac
 - Artwork sources live in `design/`; `design/render` regenerates every PNG in the asset catalog from
   them. It needs `rsvg-convert` (Homebrew `librsvg`, not in the maintainer's Brewfile)
