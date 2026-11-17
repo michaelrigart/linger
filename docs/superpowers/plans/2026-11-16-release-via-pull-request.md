@@ -21,10 +21,12 @@ canonical design: Muninn's
 ## Global Constraints
 
 - **Source:** Muninn's branch `fix/release-via-pr` in `~/Code/Netronix/muninn-fix-release-via-pr`,
-  at the commit that passed Codex's pre-merge review there (receipt `xr-1794905228-ba53f276`,
-  Muninn's suite 475/475): `092d5f8d2d083a789b2f5545543febbd68b14878`. Every `<SOURCE>` in the
-  tasks means this commit. If Muninn's session sends a newer commit, the pin changes in a plan
-  commit and the difference is ported.
+  at the commit that passed Codex's pre-merge review there (receipt `xr-1794908533-fc04b075`,
+  Muninn's suite 475/475): `ee810a9aa04404599715aac48158e2a2d20f5059`. The port was first made
+  from `092d5f8d2d083a789b2f5545543febbd68b14878` (receipt `xr-1794905228-ba53f276`); the newer
+  commit changed only the test's isolation and one README sentence. Every `<SOURCE>` in the tasks
+  means this commit. If Muninn's session sends a newer commit, the pin changes in a plan commit
+  and the difference is ported.
 - The rename is exactly this `sed`, in this order, applied to both files:
   `sed -e 's/muninn/linger/g' -e 's/Muninn/Linger/g' -e 's/Linger records calls/Linger keeps your Mac active/g'`.
   If the source test no longer contains "Muninn records calls", stop and report: the spec names
