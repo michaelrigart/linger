@@ -12,7 +12,9 @@ for Linger, and what it brings over.
 canonical design supersedes Muninn's: the anti-goal "The release script pushes to `main` only its own
 release commit (the changelog section), plus the tag", and step 3 of "Releasing", which pushes the
 release commit to `main`. It also supersedes that step's resume checks (step 1), which now follow
-the canonical design.
+the canonical design, together with its new checks that `gh` can merge; and, in step 7, the
+keeping of an asset the release already has (one not in state `uploaded` is now deleted and
+uploaded again) and the cask update (a cask whose version is newer is left alone).
 
 ## What Linger takes
 

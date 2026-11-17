@@ -4,8 +4,10 @@
 **Owner:** Michael Rigart
 **Status:** Implemented ([PR #2](https://github.com/michaelrigart/linger/pull/2))
 **Release flow:** superseded in part on 2026-11-16 by
-docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md (the release commit lands
-through a pull request).
+docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md and the canonical design it
+names ([Muninn's](https://github.com/michaelrigart/muninn/blob/main/docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md)):
+the release commit lands through a pull request, and steps 1, 3 and 7 of "Releasing" follow the
+shared script.
 
 ## Why
 
