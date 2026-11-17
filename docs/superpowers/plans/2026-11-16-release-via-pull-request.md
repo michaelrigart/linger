@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: run this plan with the `plan-run` skill. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Status:** Approved
+**Status:** Implemented ([PR #5](https://github.com/michaelrigart/linger/pull/5)); completed, do not run again
 
 **Goal:** Linger's `scripts/release` cuts a release through a pull request, with the script and its
 test taken whole from Muninn's implementation, renamed.

@@ -1,7 +1,7 @@
 # Releasing through a pull request (Linger port) — design
 
 **Date:** 2026-11-16
-**Status:** Approved
+**Status:** Implemented ([PR #5](https://github.com/michaelrigart/linger/pull/5))
 **Canonical:** Muninn's design,
 [`docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md`](https://github.com/michaelrigart/muninn/blob/main/docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md)
 in `michaelrigart/muninn` (signed off on 2026-11-16 at commit `b87ed19` on its branch
