@@ -90,7 +90,18 @@ and switch Linger on again.
 ## Releasing
 
 The maintainer cuts a release with `scripts/release`. It needs the signing certificate, so
-it runs on the maintainer's Mac, not in CI. `CHANGELOG.md` lists what each release changed.
+it runs on the maintainer's Mac, not in CI. It sets the version (the time it starts,
+`YYYYMMDD-HHMM`) and moves the `Unreleased` entries of `CHANGELOG.md` into that version, in a
+commit on `release/<version>`. It opens a pull request for that commit, checks that it changes
+only `CHANGELOG.md` and merges it as admin. Then it builds, signs, runs `scripts/verify-app` and
+packages `Linger-<version>.zip`; only then does it tag the release commit, publish the GitHub
+release and update the cask. It never pushes `main`. A finished release returns to `main`, level
+with origin, and deletes `release/<version>` locally and on origin; if it cannot, it says what is
+left and how to finish. `gh` must use a login with the `repo` (or `public_repo`) scope on an
+admin account; the script refuses to start otherwise. A run that fails part way leaves you on the
+release branch, and `scripts/release --version <version>` resumes it. `scripts/release --dry-run`
+creates nothing: no branch, commit, pull request, tag or release. It builds, verifies and
+packages, and prints the changelog section. `CHANGELOG.md` lists what each release changed.
 
 ## Tests
 

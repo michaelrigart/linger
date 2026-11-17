@@ -3,6 +3,9 @@
 **Date:** 2026-11-01
 **Owner:** Michael Rigart
 **Status:** Implemented ([PR #2](https://github.com/michaelrigart/linger/pull/2))
+**Release flow:** superseded in part on 2026-11-16 by
+docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md (the release commit lands
+through a pull request).
 
 ## Why
 
