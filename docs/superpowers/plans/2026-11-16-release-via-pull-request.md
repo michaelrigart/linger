@@ -21,9 +21,10 @@ canonical design: Muninn's
 ## Global Constraints
 
 - **Source:** Muninn's branch `fix/release-via-pr` in `~/Code/Netronix/muninn-fix-release-via-pr`,
-  at the commit that passed Codex's pre-merge review there: `<SOURCE>`. Every `<SOURCE>` in the
-  tasks means this commit. Execution does not start until this line names it in full (40
-  characters); the pin lands in its own plan commit.
+  at the commit that passed Codex's pre-merge review there (receipt `xr-1794905228-ba53f276`,
+  Muninn's suite 475/475): `092d5f8d2d083a789b2f5545543febbd68b14878`. Every `<SOURCE>` in the
+  tasks means this commit. If Muninn's session sends a newer commit, the pin changes in a plan
+  commit and the difference is ported.
 - The rename is exactly this `sed`, in this order, applied to both files:
   `sed -e 's/muninn/linger/g' -e 's/Muninn/Linger/g' -e 's/Linger records calls/Linger keeps your Mac active/g'`.
   If the source test no longer contains "Muninn records calls", stop and report: the spec names
@@ -135,28 +136,50 @@ The body names the source commit.
 - Modify: `docs/superpowers/specs/2026-11-01-linger-distribution-design.md` (header)
 
 **Interfaces:**
-- Consumes: Task 1's script behaviour, as the canonical design's "Design" describes it.
+- Consumes: Muninn's wording at `<SOURCE>` (`git -C ~/Code/Netronix/muninn-fix-release-via-pr diff 56c3e8b <SOURCE> -- README.md AGENTS.md docs/superpowers/specs/2026-11-03-muninn-distribution-design.md`),
+  names mapped. The text below is that wording fitted to Linger's files; use it as written.
 
 - [ ] **Step 1: README, "Releasing"**
 
-Keep the two existing sentences and add, in the README's register: the release commit goes on
-`release/<version>` and through a pull request that the script opens, checks and merges as admin;
-`gh` must use a login with the `repo` scope of an admin account (`gh auth login`, with `GH_TOKEN`
-unset); a failed run says where it stopped, and `scripts/release --version <version>` resumes it.
+The section becomes (the last sentence is Linger's own and stays):
+
+```markdown
+The maintainer cuts a release with `scripts/release`. It needs the signing certificate, so
+it runs on the maintainer's Mac, not in CI. It sets the version (the time it starts,
+`YYYYMMDD-HHMM`) and moves the `Unreleased` entries of `CHANGELOG.md` into that version, in a
+commit on `release/<version>`. It opens a pull request for that commit, checks that it changes
+only `CHANGELOG.md` and merges it as admin. Then it builds, signs, runs `scripts/verify-app` and
+packages `Linger-<version>.zip`; only then does it tag the release commit, publish the GitHub
+release and update the cask. It never pushes `main`. A finished release returns to `main`, level
+with origin, and deletes `release/<version>` locally and on origin; if it cannot, it says what is
+left and how to finish. `gh` must use a login with the `repo` (or `public_repo`) scope on an
+admin account; the script refuses to start otherwise. A run that fails part way leaves you on the
+release branch, and `scripts/release --version <version>` resumes it. `scripts/release --dry-run`
+creates nothing: no branch, commit, pull request, tag or release. It builds, verifies and
+packages, and prints the changelog section. `CHANGELOG.md` lists what each release changed.
+```
 
 - [ ] **Step 2: `AGENTS.md`**
 
-- Line 3 gains: `Release flow: docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md.`
-- The Release line's "since it pushes to `main`, tags," becomes "since it pushes a release
-  branch, merges its pull request as admin, tags,". "it commits and pushes nothing" becomes "it
-  commits, branches, pushes and merges nothing". "with a stub `gh`" becomes "with a stub `gh`
-  that keeps their pull requests".
+- After line 3 ("Design and behaviour: …"), add the line
+  ``Release flow: `docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md`.``
+- In the Release line, "since it pushes to `main`, tags, creates a GitHub release and pushes to
+  the Homebrew tap." becomes "since it pushes a release branch and merges its pull request (never
+  `main`), tags, creates a GitHub release and pushes to the Homebrew tap. It needs a `gh` login
+  that can merge as admin." "it commits and pushes nothing" becomes "it creates nothing: no
+  branch, commit, pull request, tag or release".
 
 - [ ] **Step 3: Distribution spec pointer**
 
-Under the header's Status line, add one line: the release flow is now governed by
-`docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md` and the canonical design it
-names (forge link). No other text changes.
+Under the header's Status line, add:
+
+```markdown
+**Release flow:** superseded in part on 2026-11-16 by
+docs/superpowers/specs/2026-11-16-release-via-pull-request-design.md (the release commit lands
+through a pull request).
+```
+
+No other text changes.
 
 - [ ] **Step 4: Check and commit**
 
